@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>Easy Delivery - ลูกค้า</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css?family=Kanit:400,700&display=swap" rel="stylesheet">
+  <style>
+    body { background: #F7FAFC; font-family: 'Kanit', 'Inter', sans-serif; }
+    .primary-gradient { background: linear-gradient(90deg, #FF5722 0%, #FFC107 100%); }
+    .accent-btn { background: #FF5722; color: #fff; border-radius: 9999px; box-shadow: 0 4px 16px -6px #FF9800; font-weight: bold; font-size: 1.1em;}
+    .category-active { background: linear-gradient(90deg, #FF5722 0%, #FFC107 100%); color: white; box-shadow: 0 6px 12px -4px rgba(220, 38, 38, 0.12);}
+    .food-card { transition: all 0.3s ease; }
+    .food-card:hover { transform: translateY(-5px) scale(1.04); box-shadow: 0 10px 30px -3px rgba(255,87,34,0.14);}
+    .accent-price { color: #FFC107; font-weight: bold; font-size: 1.1em; }
+    .cart-item-animation { animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(20px);} to { opacity:1; transform:translateX(0);}}
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none;}
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .modal-overlay { background: rgba(0,0,0,0.5); position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-content { max-height: 90vh; overflow-y: auto; }
+    .option-button { transition: all 0.2s ease;}
+    .option-button.selected { background:#FF5722; color:white; border-color:#FF5722;}
+    .tab-active { color: #FF5722; border-bottom: 2px solid #FF5722; font-weight: bold;}
+    .tab-inactive { color: #6b7280;}
+    .fav-heart { transition: color 0.2s;}
+    .fav-heart.active { color: #FF5722;}
+    .order-status { font-size: 0.95em; }
+    .order-status.waiting { color: #f59e42;}
+    .order-status.preparing { color: #2563eb;}
+    .order-status.delivering { color: #eab308;}
+    .order-status.completed { color: #22c55e;}
+    .order-status.canceled { color: #dc2626;}
+    .glow { text-shadow: 0 0 8px #FFC107, 0 0 2px #fff; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+const DELIVERY_FEE = 30;
+const COLORS = { primary: "#FF5722", accent: "#FFC107", secondary: "#009688" };
+const foodOptions = {
+  spiciness: [
+    { id: "mild", name: "เผ็ดน้อย", price: 0 },
+    { id: "medium", name: "เผ็ดปานกลาง", price: 0 },
+    { id: "hot", name: "เผ็ดมาก", price: 0 }
+  ],
+  size: [
+    { id: "normal", name: "ธรรมดา", price: 0 },
+    { id: "special", name: "พิเศษ", price: 10 }
+  ],
+  noodleType: [
+    { id: "senlek", name: "เส้นเล็ก", price: 0 },
+    { id: "senyai", name: "เส้นใหญ่", price: 0 },
+    { id: "baamee", name: "บะหมี่", price: 0 },
+    { id: "woon", name: "วุ้นเส้น", price: 0 }
+  ]
+};
+const drinkOptions = {
+  sweetness: [
+    { id: "normal", name: "ปกติ", price: 0 },
+    { id: "less", name: "หวานน้อย (50%)", price: 0 },
+    { id: "little", name: "หวานนิดเดียว (25%)", price: 0 },
+    { id: "none", name: "ไม่หวาน (0%)", price: 0 }
+  ],
+  ice: [
+    { id: "normal", name: "น้ำแข็งปกติ", price: 0 },
+    { id: "less", name: "น้ำแข็งน้อย", price: 0 },
+    { id: "none", name: "ไม่ใส่น้ำแข็ง", price: 0 }
+  ]
+};
+const categories = [
+  { id: "all", name: "ทั้งหมด", icon: "🍔" },
+  { id: "food", name: "อาหาร", icon: "🍲" },
+  { id: "drink", name: "เครื่องดื่ม", icon: "🥤" },
+  { id: "snack", name: "ขนม", icon: "🍩" },
+  { id: "dessert", name: "ของหวาน", icon: "🍰" },
+  { id: "convenience", name: "ร้านสะดวกซื้อ", icon: "🏪" }
+];
+const restaurants = [
+  { id: 1, name: "ร้านอาหารไทยอร่อย" },
+  { id: 2, name: "ร้านเครื่องดื่มสดชื่น" },
+  { id: 3, name: "ร้านขนมหวานฟินๆ" },
+  { id: 4, name: "7-11", parent: "convenience" },
+  { id: 5, name: "CJ More", parent: "convenience" },
+  { id: 6, name: "Lotus Express", parent: "convenience" },
+  { id: 7, name: "ไทฟู้ด", parent: "convenience" }
+];
+const foodItems = [
+  // เมนูร้านอาหารทั่วไป
+  { id: 1, name: "ข้าวกะเพราไก่", price: 50, category: "food", description: "เลือกระดับความเผ็ดได้", image: "ข้าวกะเพราไก่.jpg", rating: 4.8, restaurantId: 1, options: ["spiciness", "size"] },
+  { id: 2, name: "ผัดไทย", price: 60, category: "food", description: "ใส่ถั่วงอกเพิ่มฟรี", image: "ผัดไทย.jpg", rating: 4.7, restaurantId: 1, options: ["spiciness", "size"] },
+  { id: 3, name: "ก๋วยเตี๋ยวเรือ", price: 45, category: "food", description: "เลือกชนิดเส้นได้", image: "ก๋วยเตี๋ยวเรือ.jpg", rating: 4.5, restaurantId: 1, options: ["spiciness", "noodleType"] },
+  { id: 4, name: "น้ำส้มสด", price: 40, category: "drink", description: "คั้นสดใหม่ทุกวัน", image: "น้ำส้มสด.jpg", rating: 4.6, restaurantId: 2, options: ["sweetness", "ice"] },
+  { id: 5, name: "ชาเขียว", price: 35, category: "drink", description: "หวานน้อย หอมเขียว", image: "ชาเขียว.jpg", rating: 4.4, restaurantId: 2, options: ["sweetness", "ice"] },
+  { id: 6, name: "โดนัท", price: 30, category: "snack", description: "หลายรสชาติให้เลือก", image: "โดนัท.jpg", rating: 4.3, restaurantId: 3, options: [] },
+  { id: 7, name: "เค้กช็อกโกแลต", price: 65, category: "dessert", description: "เข้มข้นจากดาร์กช็อกโกแลต", image: "เค้กช็อกโกแลต.jpg", rating: 4.9, restaurantId: 3, options: [] },
+  { id: 8, name: "ซูชิ", price: 120, category: "food", description: "เซ็ตผสม 8 ชิ้น", image: "ซูชิ.jpg", rating: 4.7, restaurantId: 1, options: [] },
+  // เมนูร้านสะดวกซื้อ (15 เมนู)
+  { id: 9, name: "น้ำเปล่า (7-11)", price: 10, category: "convenience", description: "ขวด 600ml", image: "น้ำเปล่า (7-11).jpg", rating: 4.9, restaurantId: 4, options: [] },
+  { id: 10, name: "แซนด์วิชโฮลวีท (CJ More)", price: 29, category: "convenience", description: "ไส้แฮมชีส", image: "แซนด์วิชโฮลวีท (CJ More).jpg", rating: 4.7, restaurantId: 5, options: [] },
+  { id: 11, name: "โค้กขวด 500ml (Lotus Express)", price: 20, category: "convenience", description: "น้ำอัดลมขวด", image: "โค้กขวด 500ml (Lotus Express).jpg", rating: 4.5, restaurantId: 6, options: [] },
+  { id: 12, name: "ขนมปังไทฟู้ด", price: 25, category: "convenience", description: "ขนมปังนุ่ม", image: "ขนมปังไทฟู้ด.jpg", rating: 4.8, restaurantId: 7, options: [] },
+  { id: 13, name: "ยำแซ่บ 7-11", price: 42, category: "convenience", description: "รสจัดจ้าน", image: "ยำแซ่บ 7-11.jpg", rating: 4.6, restaurantId: 4, options: [] },
+  { id: 14, name: "ทิชชู่ม้วน CJ", price: 37, category: "convenience", description: "ฝากซื้อของใช้", image: "ทิชชู่ม้วน CJ.jpg", rating: 4.6, restaurantId: 5, options: [] },
+  { id: 15, name: "ข้าวกล่อง Lotus Express", price: 45, category: "convenience", description: "พร้อมทาน", image: "ข้าวกล่อง Lotus Express.jpg", rating: 4.7, restaurantId: 6, options: [] },
+  { id: 16, name: "นมถั่วเหลือง ไทฟู้ด", price: 15, category: "convenience", description: "ฝากซื้อเครื่องดื่ม", image: "นมถั่วเหลือง ไทฟู้ด.jpg", rating: 4.8, restaurantId: 7, options: [] },
+  { id: 17, name: "เบียร์ลีโอ 7-11", price: 55, category: "convenience", description: "ฝากซื้อเครื่องดื่มแอลกอฮอล์ (มีอายุเกิน 20 ปี)", image: "เบียร์ลีโอ 7-11.jpg", rating: 4.9, restaurantId: 4, options: [] },
+  { id: 18, name: "น้ำผลไม้ CJ", price: 25, category: "convenience", description: "น้ำผลไม้กล่อง", image: "น้ำผลไม้ CJ.jpg", rating: 4.5, restaurantId: 5, options: [] },
+  { id: 19, name: "ขนมขาไก่ Lotus Express", price: 10, category: "convenience", description: "ขนมกรุบกรอบ", image: "ขนมขาไก่ Lotus Express.jpg", rating: 4.4, restaurantId: 6, options: [] },
+  { id: 20, name: "ถุงขยะ ไทฟู้ด", price: 20, category: "convenience", description: "ฝากซื้อของใช้", image: "ถุงขยะ ไทฟู้ด.jpg", rating: 4.7, restaurantId: 7, options: [] },
+  { id: 21, name: "นมกล่อง UHT 7-11", price: 13, category: "convenience", description: "นมกล่องสำหรับเด็ก", image: "นมกล่อง UHT 7-11.jpg", rating: 4.8, restaurantId: 4, options: [] },
+  { id: 22, name: "เซรั่มบำรุงผิว CJ", price: 99, category: "convenience", description: "ฝากซื้อของใช้ส่วนตัว", image: "เซรั่มบำรุงผิว CJ.jpg", rating: 4.7, restaurantId: 5, options: [] },
+  { id: 23, name: "สเปรย์แอลกอฮอล์ Lotus Express", price: 25, category: "convenience", description: "ฝากซื้อของใช้", image: "สเปรย์แอลกอฮอล์ Lotus Express.jpg", rating: 4.6, restaurantId: 6, options: [] }
+];
+
+const initialReviews = [
+  { foodId: 1, user: "สมชาย", rating: 5, comment: "อร่อยมาก ส่งไว", createdAt: new Date(Date.now() - 86400000) },
+  { foodId: 1, user: "สุภาพร", rating: 4, comment: "เข้มข้นดีค่ะ", createdAt: new Date(Date.now() - 55000000) },
+  { foodId: 3, user: "Bank", rating: 5, comment: "น้ำซุปเด็ดจริง", createdAt: new Date(Date.now() - 3600000) }
+];
+const demoUser = {
+  name: "Guest", phone: "", address: "", favorites: [], orderHistory: []
+};
+const formatCurrency = (amount) => new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(amount);
+
+// ====== Header ======
+function Header({ cartCount, onCartClick, onProfileClick, onBack, showBack }) {
+  return (
+    <header className="bg-white shadow-sm py-4 px-5 sticky top-0 z-30">
+      <div className="flex items-center justify-between">
+        {showBack ? (
+          <button onClick={onBack} className="text-gray-700">
+            <i className="fas fa-chevron-left"></i>
+          </button>
+        ) : (<div className="w-6"></div>)}
+        <h1 className="text-2xl font-bold text-orange-500 tracking-tight flex items-center gap-2">
+          <span className="text-orange-500 text-3xl"><i className="fas fa-utensils"></i></span> Easy Delivery
+        </h1>
+        <div className="flex items-center gap-3">
+          <button onClick={onProfileClick} className="text-gray-700" title="โปรไฟล์">
+            <i className="fas fa-user-circle text-2xl"></i>
+          </button>
+          <div className="relative">
+            <button onClick={onCartClick} className="text-gray-700 relative" title="ตะกร้า">
+              <i className="fas fa-shopping-cart text-2xl"></i>
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-orange-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+// ====== Banner/Promo ======
+function BannerPromo() {
+  return (
+    <div className="mt-6 px-5">
+      <div className="primary-gradient rounded-2xl shadow-xl p-6 flex flex-col justify-center items-center relative overflow-hidden">
+        <h2 className="text-white text-2xl font-bold drop-shadow-lg mb-1 text-center">
+          สั่งง่าย ส่งไว ถึงหน้าบ้าน
+          <br/>
+          <span className="block text-xl font-bold mt-2 text-yellow-300 glow">ค่าจัดส่งเพียง 30 บาท</span>
+        </h2>
+        <div className="text-white text-sm font-medium mt-2 text-center">
+          หิวเมื่อไหร่ก็สั่งได้ สะดวกทุกวัน อร่อยหลากหลายเมนู!
+        </div>
+        <button className="accent-btn px-8 py-3 mt-4 text-lg">สั่งเลย</button>
+      </div>
+    </div>
+  );
+}
+
+// ====== TabBar ======
+function TabBar({ tabs, active, setActive }) {
+  return (
+    <div className="flex border-b bg-white sticky top-[60px] z-20">
+      {tabs.map(t => (
+        <button
+          key={t.id}
+          className={`flex-1 py-3 px-2 text-center text-base transition ${active === t.id ? "tab-active" : "tab-inactive"}`}
+          onClick={() => setActive(t.id)}
+        >
+          <span className="text-xl mr-1">{t.icon}</span><span className="font-bold">{t.name}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ====== SearchBar ======
+function SearchBar({ searchQuery, setSearchQuery, filter, setFilter, enableAdvanced }) {
+  return (
+    <div className="px-5 mt-4">
+      <div className="bg-white rounded-xl shadow-sm p-3 flex items-center">
+        <i className="fas fa-search text-orange-400 ml-1 mr-3"></i>
+        <input
+          type="text"
+          placeholder="ค้นหาอาหารหรือร้านค้า..."
+          className="w-full outline-none text-gray-700 placeholder-gray-400 bg-transparent"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery("")} className="text-gray-400 ml-2">
+            <i className="fas fa-times"></i>
+          </button>
+        )}
+        {enableAdvanced && (
+          <button onClick={() => setFilter(f => ({ ...f, show: !f.show }))}
+            className="ml-3 text-gray-500 hover:text-orange-500" title="ตัวกรองขั้นสูง"
+          >
+            <i className="fas fa-filter"></i>
+          </button>
+        )}
+      </div>
+      {enableAdvanced && filter.show && (
+        <div className="bg-white rounded-xl shadow-md mt-2 p-3 space-y-3">
+          <div className="flex gap-3 flex-wrap">
+            <select value={filter.restaurant} onChange={e => setFilter(f => ({ ...f, restaurant: e.target.value }))}
+              className="border rounded px-2 py-1 text-sm">
+              <option value="">ทุกร้าน</option>
+              {restaurants.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+            <select value={filter.sort} onChange={e => setFilter(f => ({ ...f, sort: e.target.value }))}
+              className="border rounded px-2 py-1 text-sm">
+              <option value="default">เรียงตาม</option>
+              <option value="price-asc">ราคาต่ำ-สูง</option>
+              <option value="price-desc">ราคาสูง-ต่ำ</option>
+              <option value="rating-desc">คะแนนสูงสุด</option>
+            </select>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ====== Category ======
+function CategoryList({ selectedCategory, onSelectCategory }) {
+  return (
+    <div className="mt-6 px-5">
+      <div className="flex space-x-3 overflow-x-auto pb-2 hide-scrollbar">
+        {categories.map(category => (
+          <button
+            key={category.id}
+            onClick={() => onSelectCategory(category.id)}
+            className={`flex flex-col items-center py-2 px-4 rounded-2xl min-w-max transition category-btn
+              ${selectedCategory === category.id ? 'category-active' : 'bg-white text-gray-700 shadow-sm'}`}
+          >
+            <span className="text-2xl mb-1">{category.icon}</span>
+            <span className="text-xs font-semibold">{category.name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ====== Food List ======
+function FoodList({ foods, onAddToCart, searchQuery, favorites, onToggleFavorite, onShowReviews, reviews }) {
+  return (
+    <div className="mt-6 px-5 mb-24">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-900">
+          {searchQuery ? `ผลการค้นหา "${searchQuery}"` : "เมนูแนะนำ"}
+        </h2>
+        <span className="text-sm text-gray-500">{foods.length} รายการ</span>
+      </div>
+      {foods.length === 0 ? (
+        <div className="text-center py-10">
+          <i className="fas fa-search text-gray-300 text-5xl mb-3"></i>
+          <p className="text-gray-500">ไม่พบเมนูที่คุณค้นหา</p>
+          <p className="text-sm text-gray-400 mt-1">ลองค้นหาด้วยคำอื่นดูนะ</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-5">
+          {foods.map(food => {
+            const restaurant = restaurants.find(r => r.id === food.restaurantId);
+            const fav = favorites.includes(food.id);
+            const foodReviews = reviews.filter(r => r.foodId === food.id);
+            return (
+              <div key={food.id} className="food-card bg-white rounded-2xl shadow-xl overflow-hidden">
+                <div className="relative">
+                  <img src={food.image} alt={food.name} className="w-full h-32 object-cover" />
+                  <button onClick={() => onToggleFavorite(food.id)}
+                    className={`absolute top-2 right-2 fav-heart ${fav ? "active" : ""}`}
+                    title={fav ? "นำออกจากรายการโปรด" : "เพิ่มในรายการโปรด"}
+                  >
+                    <i className="fas fa-heart text-xl"></i>
+                  </button>
+                  <div className="absolute top-2 left-2 bg-white rounded-full px-2 py-1 flex items-center shadow cursor-pointer"
+                    onClick={() => onShowReviews(food.id)}>
+                    <i className="fas fa-star text-yellow-400 text-xs mr-1"></i>
+                    <span className="text-xs font-bold">{food.rating}</span>
+                    <span className="ml-1 text-xs text-gray-400">({foodReviews.length})</span>
+                  </div>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-gray-900 text-base">{food.name}</h3>
+                  <p className="text-xs text-gray-500 mt-1">{restaurant?.name}</p>
+                  <div className="flex justify-between items-center mt-3">
+                    <span className="accent-price">{formatCurrency(food.price)}</span>
+                    <button
+                      onClick={() => onAddToCart(food)}
+                      className="accent-btn w-9 h-9 flex items-center justify-center hover:bg-orange-600 transition"
+                    >
+                      <i className="fas fa-plus text-base"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ====== รีวิวสินค้า Modal ======
+function FoodReviewModal({ food, reviews, onClose, onAddReview, user }) {
+  const [newReview, setNewReview] = React.useState({ rating: 5, comment: "" });
+  const [showForm, setShowForm] = React.useState(false);
+  return (
+    <div className="modal-overlay">
+      <div className="bg-white rounded-2xl w-full max-w-md modal-content">
+        <div className="p-5">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-900">รีวิว {food.name}</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <i className="fas fa-times text-xl"></i>
+            </button>
+          </div>
+          <div className="mb-4">
+            <img src={food.image} alt={food.name} className="w-24 h-24 object-cover rounded-xl mx-auto" />
+            <div className="text-center text-lg font-bold mt-2">
+              คะแนนเฉลี่ย <span className="text-yellow-500">{food.rating}</span>
+              <span className="ml-2 text-xs text-gray-500">({reviews.length} รีวิว)</span>
+            </div>
+          </div>
+          <div className="mb-4">
+            {reviews.length === 0 ? (
+              <div className="text-center text-gray-400">ยังไม่มีรีวิว</div>
+            ) : (
+              <div className="space-y-3 max-h-40 overflow-y-auto">
+                {reviews.map((r, i) => (
+                  <div key={i} className="bg-gray-100 rounded-lg px-3 py-2">
+                    <div>
+                      <span className="text-yellow-400">
+                        {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
+                      </span>
+                      <span className="ml-2 text-gray-800 text-sm font-bold">{r.user}</span>
+                      <span className="ml-2 text-xs text-gray-500">{new Date(r.createdAt).toLocaleString("th-TH")}</span>
+                    </div>
+                    <div className="text-gray-700 text-sm mt-1">{r.comment}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <button className="w-full bg-gray-200 text-gray-700 py-2 rounded-lg font-bold mb-2"
+            onClick={() => setShowForm(s => !s)}>
+            {showForm ? "ยกเลิก" : "เพิ่มรีวิวของคุณ"}
+          </button>
+          {showForm && (
+            <form onSubmit={e => { e.preventDefault(); onAddReview(newReview); setShowForm(false);}}
+              className="bg-gray-50 p-3 rounded-lg mt-2">
+              <div>
+                <span className="mr-2">คะแนน:</span>
+                {[1,2,3,4,5].map(n =>
+                  <button key={n} type="button"
+                    onClick={() => setNewReview(r => ({ ...r, rating: n }))}
+                    className={n <= newReview.rating ? "text-yellow-500" : "text-gray-400"}>
+                    <i className="fas fa-star"></i>
+                  </button>
+                )}
+              </div>
+              <textarea required placeholder="แสดงความคิดเห็น..." className="w-full mt-2 p-2 border rounded"
+                value={newReview.comment} onChange={e => setNewReview(r => ({...r, comment:e.target.value}))}/>
+              <button type="submit" className="w-full mt-2 bg-red-500 text-white py-2 rounded font-bold">
+                ส่งรีวิว
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ====== Modal เลือกตัวเลือกสินค้า ======
+function ItemOptionsModal({ item, isOpen, onClose, onAddToCartWithOptions }) {
+  const [selectedOptions, setSelectedOptions] = React.useState({});
+  const [quantity, setQuantity] = React.useState(1);
+  React.useEffect(() => {
+    const defaultOptions = {};
+    if (item.options.includes('spiciness')) defaultOptions.spiciness = foodOptions.spiciness[1];
+    if (item.options.includes('size')) defaultOptions.size = foodOptions.size[0];
+    if (item.options.includes('sweetness')) defaultOptions.sweetness = drinkOptions.sweetness[0];
+    if (item.options.includes('ice')) defaultOptions.ice = drinkOptions.ice[0];
+    if (item.options.includes('noodleType')) defaultOptions.noodleType = foodOptions.noodleType[0];
+    setSelectedOptions(defaultOptions); setQuantity(1);
+  }, [item]);
+  if (!isOpen) return null;
+  const restaurant = restaurants.find(r => r.id === item.restaurantId);
+
+  const handleOptionSelect = (optionType, option) => {
+    setSelectedOptions(prev => ({ ...prev, [optionType]: option }));
+  };
+  const calculateTotalPrice = () => {
+    let total = item.price;
+    Object.values(selectedOptions).forEach(option => { total += option.price; });
+    return total * quantity;
+  };
+  const handleAddToCart = () => {
+    onAddToCartWithOptions(item, selectedOptions, quantity);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="bg-white rounded-2xl w-full max-w-md modal-content">
+        <div className="p-5">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-900">เพิ่มลงในตะกร้า</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <i className="fas fa-times text-xl"></i>
+            </button>
+          </div>
+          <div className="flex items-start mb-4">
+            <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-xl" />
+            <div className="ml-4">
+              <h3 className="font-bold text-gray-900">{item.name}</h3>
+              <p className="text-sm text-gray-500">{restaurant?.name}</p>
+              <p className="text-red-600 font-bold mt-1">{formatCurrency(item.price)}</p>
+            </div>
+          </div>
+          <div className="mb-6">
+            <h4 className="font-medium text-gray-900 mb-2">จำนวน</h4>
+            <div className="flex items-center">
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center">
+                <i className="fas fa-minus"></i>
+              </button>
+              <span className="mx-4 font-bold text-lg">{quantity}</span>
+              <button onClick={() => setQuantity(quantity + 1)}
+                className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center">
+                <i className="fas fa-plus"></i>
+              </button>
+            </div>
+          </div>
+          {item.options.includes('spiciness') && (
+            <div className="mb-6">
+              <h4 className="font-medium text-gray-900 mb-2">ระดับความเผ็ด</h4>
+              <div className="grid grid-cols-3 gap-2">
+                {foodOptions.spiciness.map(option => (
+                  <button key={option.id}
+                    onClick={() => handleOptionSelect('spiciness', option)}
+                    className={`option-button py-2 px-3 rounded-lg border ${selectedOptions.spiciness?.id === option.id ? 'selected' : 'border-gray-300'}`}>
+                    {option.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {item.options.includes('size') && (
+            <div className="mb-6">
+              <h4 className="font-medium text-gray-900 mb-2">ขนาด</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {foodOptions.size.map(option => (
+                  <button key={option.id}
+                    onClick={() => handleOptionSelect('size', option)}
+                    className={`option-button py-2 px-3 rounded-lg border ${selectedOptions.size?.id === option.id ? 'selected' : 'border-gray-300'}`}>
+                    {option.name}
+                    {option.price > 0 && ` (+${formatCurrency(option.price)})`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {item.options.includes('noodleType') && (
+            <div className="mb-6">
+              <h4 className="font-medium text-gray-900 mb-2">เลือกเส้น</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {foodOptions.noodleType.map(option => (
+                  <button key={option.id}
+                    onClick={() => handleOptionSelect('noodleType', option)}
+                    className={`option-button py-2 px-3 rounded-lg border ${selectedOptions.noodleType?.id === option.id ? 'selected' : 'border-gray-300'}`}>
+                    {option.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {item.options.includes('sweetness') && (
+            <div className="mb-6">
+              <h4 className="font-medium text-gray-900 mb-2">ระดับความหวาน</h4>
+              <div className="grid grid-cols-2 gap-2">
+                {drinkOptions.sweetness.map(option => (
+                  <button key={option.id}
+                    onClick={() => handleOptionSelect('sweetness', option)}
+                    className={`option-button py-2 px-3 rounded-lg border ${selectedOptions.sweetness?.id === option.id ? 'selected' : 'border-gray-300'}`}>
+                    {option.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {item.options.includes('ice') && (
+            <div className="mb-6">
+              <h4 className="font-medium text-gray-900 mb-2">น้ำแข็ง</h4>
+              <div className="grid grid-cols-3 gap-2">
+                {drinkOptions.ice.map(option => (
+                  <button key={option.id}
+                    onClick={() => handleOptionSelect('ice', option)}
+                    className={`option-button py-2 px-3 rounded-lg border ${selectedOptions.ice?.id === option.id ? 'selected' : 'border-gray-300'}`}>
+                    {option.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="border-t pt-4 mt-4">
+            <div className="flex justify-between items-center mb-4">
+              <span className="font-bold text-gray-900">รวม</span>
+              <span className="font-bold text-red-600 text-lg">{formatCurrency(calculateTotalPrice())}</span>
+            </div>
+            <button onClick={handleAddToCart}
+              className="w-full bg-red-500 text-white py-3 rounded-xl font-bold hover:bg-red-600 transition-colors">
+              เพิ่มลงตะกร้า
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ====== Cart Item ======
+function CartItem({ item, onUpdateQty, onRemove }) {
+  const restaurant = restaurants.find(r => r.id === item.restaurantId);
+  return (
+    <div className="cart-item-animation bg-white rounded-xl p-4 shadow-sm mb-3">
+      <div className="flex justify-between items-start">
+        <div className="flex-1">
+          <h3 className="font-medium text-gray-900">{item.name}</h3>
+          <p className="text-xs text-gray-500">{restaurant?.name}</p>
+          {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
+            <div className="mt-2 text-xs text-gray-600">
+              {Object.entries(item.selectedOptions).map(([key, option]) => (
+                <div key={key}>{option?.name}</div>
+              ))}
+            </div>
+          )}
+          <p className="text-red-600 font-bold mt-1">{formatCurrency(item.price)}</p>
+        </div>
+        <button onClick={() => onRemove(item)} className="text-gray-400">
+          <i className="fas fa-times"></i>
+        </button>
+      </div>
+      <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => onUpdateQty(item, item.qty - 1)}
+            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
+          >
+            <i className="fas fa-minus text-gray-600 text-xs"></i>
+          </button>
+          <span className="font-bold">{item.qty}</span>
+          <button
+            onClick={() => onUpdateQty(item, item.qty + 1)}
+            className="w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center"
+          >
+            <i className="fas fa-plus text-gray-600 text-xs"></i>
+          </button>
+        </div>
+        <span className="font-bold text-gray-900">{formatCurrency(item.price * item.qty)}</span>
+      </div>
+    </div>
+  );
+}
+
+// ====== Cart Page ======
+function CartPage({ cart, onUpdateQty, onRemoveItem, onBack, onCheckout, onPay, totalAmount }) {
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const deliveryFee = DELIVERY_FEE;
+  const total = subtotal + deliveryFee;
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24">
+      <Header
+        cartCount={cart.reduce((sum, item) => sum + item.qty, 0)}
+        onBack={onBack}
+        showBack={true}
+      />
+      <div className="px-5 pt-4">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">ตะกร้าสินค้า</h2>
+        {cart.length === 0 ? (
+          <div className="text-center py-10">
+            <i className="fas fa-shopping-cart text-gray-300 text-5xl mb-4"></i>
+            <p className="text-gray-500">ยังไม่มีสินค้าในตะกร้า</p>
+            <button
+              onClick={onBack}
+              className="mt-4 text-red-600 font-medium"
+            >
+              เลือกเมนูเลย
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="mb-4">
+              {cart.map((item, idx) => (
+                <CartItem
+                  key={item.id + JSON.stringify(item.selectedOptions || {})}
+                  item={item}
+                  onUpdateQty={onUpdateQty}
+                  onRemove={onRemoveItem}
+                />
+              ))}
+            </div>
+            <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">ยอดรวมสินค้า</span>
+                  <span className="font-medium">{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">ค่าจัดส่ง</span>
+                  <span className="font-medium">{formatCurrency(deliveryFee)}</span>
+                </div>
+                <div className="border-t pt-3 flex justify-between font-bold text-lg">
+                  <span>รวมทั้งหมด</span>
+                  <span className="text-red-600">{formatCurrency(total)}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={onCheckout}
+                className="flex-1 bg-red-500 text-white py-4 rounded-xl font-bold text-lg shadow-md hover:bg-red-600 transition-colors"
+              >
+                สั่งอาหาร
+              </button>
+              <button
+                onClick={onPay}
+                className="flex-1 bg-green-500 text-white py-4 rounded-xl font-bold text-lg shadow-md hover:bg-green-600 transition-colors"
+              >
+                ชำระเงิน
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ====== Payment Page ======
+function PaymentPage({ amount, onCancel, onConfirm }) {
+  const [secondsLeft, setSecondsLeft] = React.useState(600); // 10 นาที
+
+  React.useEffect(() => {
+    if (secondsLeft > 0) {
+      const timer = setTimeout(() => setSecondsLeft(secondsLeft - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [secondsLeft]);
+
+  const formatTime = (sec) => {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0');
+    const s = (sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24 flex flex-col items-center justify-start">
+      <Header cartCount={0} showBack={true} onBack={onCancel} />
+      <div className="px-5 pt-6 w-full max-w-md">
+        <h2 className="text-xl font-bold text-gray-900 mb-4">ชำระเงิน</h2>
+        <div className="bg-white rounded-xl p-4 shadow-sm flex flex-col items-center mb-6">
+          <img
+  src={`https://promptpay.io/0809614423/${amount}.png`}
+  alt="QR Code"
+  className="w-52 h-52 object-contain mb-4"
+  style={{ background: "#fff", borderRadius: "12px" }}
+/>
+          <div className="text-red-600 text-lg font-bold mb-2">
+            เวลาคงเหลือ: {formatTime(secondsLeft)}
+          </div>
+          <div className="text-gray-800 mb-3 text-center">
+            ยอดชำระ <span className="font-bold text-red-600">{formatCurrency(amount)}</span>
+          </div>
+          <div className="text-gray-500 text-sm text-center mb-3">
+            เมื่อโอนเสร็จเรียบร้อยแล้ว<br />
+            รบกวนแจ้งหลักฐานการโอนผ่านแชทไลน์
+          </div>
+        </div>
+        <div className="flex space-x-3">
+          <button
+            className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold"
+            onClick={onCancel}
+          >
+            ยกเลิก
+          </button>
+          <button
+            className="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold"
+            onClick={onConfirm}
+          >
+            ยืนยันการโอน
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ====== Payment Success Modal ======
+function PaymentSuccessModal({ onClose }) {
+  return (
+    <div className="modal-overlay">
+      <div className="bg-white rounded-2xl p-8 modal-content flex flex-col items-center">
+        <i className="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
+        <h3 className="font-bold text-xl text-green-600 mb-2">ชำระเงินเรียบร้อยแล้ว</h3>
+        <p className="text-gray-700 mb-4 text-center">ขอบคุณสำหรับการสั่งซื้อ<br/>โปรดรอรับอาหารตามเวลาที่กำหนด</p>
+        <button
+          className="bg-red-500 text-white py-2 px-5 rounded-xl font-bold"
+          onClick={onClose}
+        >
+          กลับสู่หน้าหลัก
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ====== Profile Page ======
+function ProfilePage({ user, setUser, onBack, onShowOrderHistory }) {
+  const [edit, setEdit] = React.useState(false);
+  const [form, setForm] = React.useState(user);
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24">
+      <Header cartCount={0} showBack={true} onBack={onBack} />
+      <div className="px-5 pt-4">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">โปรไฟล์ของฉัน</h2>
+        <div className="bg-white rounded-xl p-4 shadow space-y-3">
+          <div className="flex items-center gap-3">
+            <i className="fas fa-user-circle text-4xl text-gray-400"></i>
+            <span className="font-bold text-lg">{user.name}</span>
+          </div>
+          <div className="text-sm text-gray-700">
+            <div>เบอร์โทร: {user.phone || <span className="text-gray-400">-</span>}</div>
+            <div>ที่อยู่: {user.address || <span className="text-gray-400">-</span>}</div>
+          </div>
+          {edit ? (
+            <form className="space-y-2"
+              onSubmit={e => { e.preventDefault(); setUser(f=> ({...f, ...form})); setEdit(false);}}>
+              <input className="block border px-3 py-2 rounded w-full" placeholder="ชื่อ"
+                value={form.name} onChange={e=>setForm(f=>({...f, name:e.target.value}))}/>
+              <input className="block border px-3 py-2 rounded w-full" placeholder="เบอร์โทร"
+                value={form.phone} onChange={e=>setForm(f=>({...f, phone:e.target.value}))}/>
+              <input className="block border px-3 py-2 rounded w-full" placeholder="ที่อยู่"
+                value={form.address} onChange={e=>setForm(f=>({...f, address:e.target.value}))}/>
+              <div className="flex gap-2"><button type="submit" className="bg-green-500 text-white px-4 py-2 rounded font-bold flex-1">บันทึก</button>
+              <button type="button" className="bg-gray-300 text-gray-700 px-4 py-2 rounded font-bold flex-1"
+                onClick={() => setEdit(false)}>ยกเลิก</button></div>
+            </form>
+          ) : (
+            <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded font-bold"
+              onClick={() => setEdit(true)}>
+              แก้ไขข้อมูล
+            </button>
+          )}
+          <button className="w-full bg-blue-500 text-white py-2 rounded font-bold"
+            onClick={onShowOrderHistory}>
+            ประวัติการสั่งซื้อของฉัน
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ====== รายการโปรด ======
+function FavoritePage({ favoriteFoods, onShowFood, onBack }) {
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24">
+      <Header cartCount={0} showBack={true} onBack={onBack}/>
+      <div className="px-5 pt-4">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">เมนูโปรดของฉัน</h2>
+        {favoriteFoods.length === 0
+          ? <div className="text-center text-gray-400 pt-10">ยังไม่มีเมนูโปรด</div>
+          : (
+            <div className="grid grid-cols-2 gap-4">
+              {favoriteFoods.map(food => (
+                <div key={food.id} className="food-card bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer"
+                  onClick={()=>onShowFood(food)}>
+                  <img src={food.image} alt={food.name} className="w-full h-28 object-cover"/>
+                  <div className="p-3">
+                    <div className="font-bold text-gray-900">{food.name}</div>
+                    <div className="text-xs text-gray-500">{restaurants.find(r=>r.id===food.restaurantId)?.name}</div>
+                    <div className="mt-1">{formatCurrency(food.price)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </div>
+  );
+}
+
+// ====== ประวัติออเดอร์ =======
+function OrderHistoryPage({ orderHistory, onBack }) {
+  return (
+    <div className="min-h-screen bg-gray-50 pb-24">
+      <Header cartCount={0} showBack={true} onBack={onBack}/>
+      <div className="px-5 pt-4">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">ประวัติการสั่งซื้อ</h2>
+        {orderHistory.length === 0
+          ? <div className="text-center text-gray-400 pt-10">ยังไม่มีประวัติการสั่งซื้อ</div>
+          : (
+            <div className="space-y-4">
+              {orderHistory.map((order, i) => (
+                <div key={i} className="bg-white rounded-xl p-4 shadow">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-gray-800">#{order.orderId}</span>
+                    <span className={`order-status ${order.status}`}>
+                      {
+                        {
+                          waiting: "รอรับออเดอร์",
+                          preparing: "กำลังเตรียม",
+                          delivering: "กำลังส่ง",
+                          completed: "สำเร็จ",
+                          canceled: "ยกเลิก"
+                        }[order.status]
+                      }
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-700 mb-1">
+                    <span>ชื่อ: {order.userInfo?.name || '-'}</span>
+                    <span className="ml-2">เบอร์โทร: {order.userInfo?.phone || '-'}</span>
+                  </div>
+                  <div className="text-xs text-gray-500 mb-1">
+                    {new Date(order.date).toLocaleString("th-TH")}
+                  </div>
+                  <ul className="text-gray-700 text-sm mb-1 pl-4 list-disc">
+                    {order.cart.map((item, j) => (
+                      <li key={j}>
+                        {item.name} x {item.qty}
+                        {/* แสดงออปชั่น (options) */}
+                        {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
+                          <ul className="pl-4 text-xs text-gray-500 list-none">
+                            {Object.entries(item.selectedOptions).map(([optKey, optVal]) => (
+                              <li key={optKey}>{optVal?.name}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="text-xs text-gray-500">รวม {formatCurrency(order.amount)}</div>
+                </div>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </div>
+  );
+}
+
+// ====== บันทึกออเดอร์ลง localStorage ======
+function saveOrderToStorage(order) {
+  const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+  orders.unshift(order);
+  localStorage.setItem("orders", JSON.stringify(orders));
+}
+
+// ====== Main App ======
+function App() {
+  // State
+  const [page, setPage] = React.useState("home");
+  const [selectedCategory, setSelectedCategory] = React.useState("all");
+  const [cart, setCart] = React.useState([]);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [filter, setFilter] = React.useState({ restaurant: "", sort: "default", show: false });
+  const [selectedItem, setSelectedItem] = React.useState(null);
+  const [showOptionsModal, setShowOptionsModal] = React.useState(false);
+  const [showPaymentSuccess, setShowPaymentSuccess] = React.useState(false);
+  const [user, setUser] = React.useState({ ...demoUser });
+  const [showFavoritePage, setShowFavoritePage] = React.useState(false);
+  const [showOrderHistory, setShowOrderHistory] = React.useState(false);
+
+  // Review Modal
+  const [reviewFoodId, setReviewFoodId] = React.useState(null);
+  const [reviews, setReviews] = React.useState(initialReviews);
+
+  // Order History (simulate backend orders)
+  const [orderHistory, setOrderHistory] = React.useState([]);
+
+  // Filter logic
+  let filteredFoods = foodItems;
+  if (selectedCategory !== "all") filteredFoods = filteredFoods.filter(f => f.category === selectedCategory);
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filteredFoods = filteredFoods.filter(f => f.name.toLowerCase().includes(q) || f.description.toLowerCase().includes(q));
+  }
+  if (filter.restaurant) filteredFoods = filteredFoods.filter(f => f.restaurantId == filter.restaurant);
+  if (filter.sort === "price-asc") filteredFoods = [...filteredFoods].sort((a, b) => a.price - b.price);
+  if (filter.sort === "price-desc") filteredFoods = [...filteredFoods].sort((a, b) => b.price - a.price);
+  if (filter.sort === "rating-desc") filteredFoods = [...filteredFoods].sort((a, b) => b.rating - a.rating);
+
+  // Add to cart (with options)
+  const handleAddToCartClick = (item) => {
+    if (item.options && item.options.length > 0) {
+      setSelectedItem(item); setShowOptionsModal(true);
+    } else {
+      addToCart(item, {}, 1);
+    }
+  };
+  const addToCart = (item, selectedOptions = {}, quantity) => {
+    setCart(prevCart => {
+      let finalPrice = item.price;
+      Object.values(selectedOptions).forEach(option => { if (option) finalPrice += option.price; });
+      const existingItemIndex = prevCart.findIndex(cartItem =>
+        cartItem.id === item.id &&
+        JSON.stringify(cartItem.selectedOptions || {}) === JSON.stringify(selectedOptions || {})
+      );
+      if (existingItemIndex > -1) {
+        const updatedCart = [...prevCart];
+        updatedCart[existingItemIndex].qty += quantity;
+        return updatedCart;
+      } else {
+        return [...prevCart, {
+          ...item,
+          qty: quantity,
+          price: finalPrice,
+          selectedOptions: selectedOptions || {},
+          originalPrice: item.price
+        }];
+      }
+    });
+  };
+  // อัปเดตจำนวน
+  const updateQty = (cartItem, newQty) => {
+    if (newQty < 1) return;
+    setCart(prevCart => prevCart.map(item =>
+      item.id === cartItem.id &&
+      JSON.stringify(item.selectedOptions||{}) === JSON.stringify(cartItem.selectedOptions||{})
+        ? { ...item, qty: newQty }
+        : item
+    ));
+  };
+  // ลบสินค้า
+  const removeItem = (cartItem) => {
+    setCart(prevCart => prevCart.filter(item =>
+      !(item.id === cartItem.id &&
+      JSON.stringify(item.selectedOptions||{}) === JSON.stringify(cartItem.selectedOptions||{}))
+    ));
+  };
+
+  // รายการโปรด
+  const favorites = user.favorites || [];
+  const handleToggleFavorite = (foodId) => {
+    setUser(u => ({
+      ...u,
+      favorites: favorites.includes(foodId)
+        ? favorites.filter(id => id !== foodId)
+        : [...favorites, foodId]
+    }));
+  };
+  const favoriteFoods = foodItems.filter(f => favorites.includes(f.id));
+
+  // รีวิว
+  const foodReviewModalFood = foodItems.find(f => f.id === reviewFoodId);
+  const foodReviews = foodReviewModalFood
+    ? reviews.filter(r => r.foodId === foodReviewModalFood.id)
+    : [];
+  const handleAddReview = (newReview) => {
+    setReviews(rs => [
+      { ...newReview, user: user.name, foodId: foodReviewModalFood.id, createdAt: new Date() },
+      ...rs
+    ]);
+  };
+
+  // ชำระเงิน
+  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+  const totalAmount = subtotal + DELIVERY_FEE;
+
+  // Handle order checkout (save to localStorage for admin site)
+  const handleOrderCheckout = () => {
+    if (!user.name || !user.phone || !user.address) {
+      alert("กรุณากรอกชื่อ เบอร์โทร และที่อยู่ในโปรไฟล์ให้ครบถ้วน");
+      setPage("profile");
+      return;
+    }
+    const orderId = "E" + Math.floor(Math.random() * 1000000);
+    const newOrder = {
+      orderId,
+      userName: user.name,
+      userInfo: { name: user.name, phone: user.phone, address: user.address },
+      cart: cart,
+      amount: totalAmount,
+      status: "waiting",
+      date: new Date(),
+    };
+    saveOrderToStorage(newOrder);
+    setOrderHistory(orders => [newOrder, ...orders]);
+    setUser(u => ({
+      ...u,
+      orderHistory: [newOrder, ...(u.orderHistory || [])]
+    }));
+    setShowPaymentSuccess(true);
+    setCart([]);
+  };
+
+  // ===== UI =====
+  if (showFavoritePage) {
+    return <FavoritePage favoriteFoods={favoriteFoods} onShowFood={f=>setReviewFoodId(f.id)} onBack={()=>setShowFavoritePage(false)}/>;
+  }
+  if (showOrderHistory) {
+    return <OrderHistoryPage orderHistory={user.orderHistory || []} onBack={()=>setShowOrderHistory(false)}/>;
+  }
+  if (page === "profile") {
+    return <ProfilePage user={user} setUser={setUser}
+      onBack={()=>setPage("home")}
+      onShowOrderHistory={()=>{setShowOrderHistory(true);}}/>;
+  }
+  // ---- หน้าแรก ----
+  return (
+    <div className="max-w-md mx-auto relative bg-gray-50 min-h-screen">
+      <Header
+        cartCount={cart.reduce((sum, item) => sum + item.qty, 0)}
+        onCartClick={() => setPage("cart")}
+        onProfileClick={() => setPage("profile")}
+        showBack={false}
+      />
+      <TabBar
+        tabs={[
+          { id: "home", name: "เมนูทั้งหมด", icon: <i className="fas fa-store"></i> },
+          { id: "fav", name: "รายการโปรด", icon: <i className="fas fa-heart"></i> },
+          { id: "order", name: "ประวัติ", icon: <i className="fas fa-receipt"></i> }
+        ]}
+        active={page}
+        setActive={tab => {
+          if (tab === "fav") setShowFavoritePage(true);
+          else if (tab === "order") setShowOrderHistory(true);
+          else setPage(tab);
+        }}
+      />
+      {page === "home" && (
+        <>
+        <BannerPromo/>
+        <SearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          filter={filter}
+          setFilter={setFilter}
+          enableAdvanced={true}
+        />
+        <CategoryList
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+        <FoodList
+          foods={filteredFoods}
+          onAddToCart={handleAddToCartClick}
+          searchQuery={searchQuery}
+          favorites={favorites}
+          onToggleFavorite={handleToggleFavorite}
+          onShowReviews={id=>setReviewFoodId(id)}
+          reviews={reviews}
+        />
+        </>
+      )}
+      {page === "cart" && (
+        <CartPage
+          cart={cart}
+          onUpdateQty={updateQty}
+          onRemoveItem={removeItem}
+          onBack={() => setPage("home")}
+          onCheckout={handleOrderCheckout}
+          onPay={() => setPage("payment")}
+          totalAmount={totalAmount}
+        />
+      )}
+      {page === "payment" && (
+        <PaymentPage
+          amount={totalAmount}
+          onCancel={() => setPage("cart")}
+          onConfirm={handleOrderCheckout}
+        />
+      )}
+      {showPaymentSuccess && (
+        <PaymentSuccessModal onClose={() => {
+          setShowPaymentSuccess(false);
+          setPage("home");
+        }} />
+      )}
+      {selectedItem && (
+        <ItemOptionsModal
+          item={selectedItem}
+          isOpen={showOptionsModal}
+          onClose={() => setShowOptionsModal(false)}
+          onAddToCartWithOptions={addToCart}
+        />
+      )}
+      {reviewFoodId && foodReviewModalFood && (
+        <FoodReviewModal
+          food={foodReviewModalFood}
+          reviews={foodReviews}
+          onClose={()=>setReviewFoodId(null)}
+          onAddReview={handleAddReview}
+          user={user}
+        />
+      )}
+      <footer className="text-center py-6 text-xs text-gray-400">
+        &copy; {new Date().getFullYear()} Easy Delivery. All rights reserved.<br />
+        <a href="https://lin.ee/" target="_blank" rel="noopener" className="text-red-500 underline">ติดต่อผ่าน LINE</a>
+      </footer>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>
