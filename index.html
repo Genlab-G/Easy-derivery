@@ -42,7 +42,7 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-
+const GOOGLE_SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzeIzwtfJKkFdo1LYBtujVF4jf0ODupGe6xrQwHpLB8xSNj02Sj_tW3L3tEyTDYqtg/exec";
 const DELIVERY_FEE = 30;
 const COLORS = { primary: "#FF5722", accent: "#FFC107", secondary: "#009688" };
 const foodOptions = {
@@ -1029,33 +1029,41 @@ function App() {
 
   // Handle order checkout (save to localStorage for admin site)
   const handleOrderCheckout = () => {
-    if (!user.name || !user.phone || !user.address) {
-      alert("กรุณากรอกชื่อ เบอร์โทร และที่อยู่ในโปรไฟล์ให้ครบถ้วน");
-      setPage("profile");
-      return;
-    }
-    const orderId = "E" + Math.floor(Math.random() * 1000000);
-    const newOrder = {
-      orderId,
-      userName: user.name,
-      userInfo: { name: user.name, phone: user.phone, address: user.address },
-      cart: cart,
-      amount: totalAmount,
-      status: "waiting",
-      date: new Date(),
-    };
-    saveOrderToStorage(newOrder);
-    setUser(u => {
-      const newUser = {
-        ...u,
-        orderHistory: [newOrder, ...(u.orderHistory || [])]
-      };
-      saveUserToStorage(newUser);
-      return newUser;
-    });
-    setShowPaymentSuccess(true);
-    setCart([]);
+  if (!user.name || !user.phone || !user.address) {
+    alert("กรุณากรอกชื่อ เบอร์โทร และที่อยู่ในโปรไฟล์ให้ครบถ้วน");
+    setPage("profile");
+    return;
+  }
+  const orderId = "E" + Math.floor(Math.random() * 1000000);
+  const newOrder = {
+    orderId,
+    userName: user.name,
+    userInfo: { name: user.name, phone: user.phone, address: user.address },
+    cart: cart,
+    amount: totalAmount,
+    status: "waiting",
+    date: new Date(),
   };
+
+  // ส่งข้อมูล order ไป Google Sheets
+  fetch(GOOGLE_SHEET_API_URL, {
+    method: "POST",
+    body: JSON.stringify(newOrder),
+    headers: { "Content-Type": "application/json" }
+  });
+
+  saveOrderToStorage(newOrder);
+  setUser(u => {
+    const newUser = {
+      ...u,
+      orderHistory: [newOrder, ...(u.orderHistory || [])]
+    };
+    saveUserToStorage(newUser);
+    return newUser;
+  });
+  setShowPaymentSuccess(true);
+  setCart([]);
+};
 
   // ===== UI =====
   if (showFavoritePage) {
