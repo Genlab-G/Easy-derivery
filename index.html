@@ -130,7 +130,29 @@ const demoUser = {
 };
 const formatCurrency = (amount) => new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(amount);
 
-// ====== Header ======
+function loadUserFromStorage() {
+  try {
+    const data = JSON.parse(localStorage.getItem('userProfile'));
+    if (data) return data;
+  } catch (e) {}
+  return demoUser;
+}
+function saveUserToStorage(user) {
+  localStorage.setItem('userProfile', JSON.stringify(user));
+}
+function loadOrderHistoryFromStorage(phone) {
+  try {
+    const orders = JSON.parse(localStorage.getItem("orders")) || [];
+    return orders.filter(o => o.userInfo?.phone === phone);
+  } catch (e) { return []; }
+}
+function saveOrderToStorage(order) {
+  const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+  orders.unshift(order);
+  localStorage.setItem("orders", JSON.stringify(orders));
+}
+
+// --- Header ---
 function Header({ cartCount, onCartClick, onProfileClick, onBack, showBack }) {
   return (
     <header className="bg-white shadow-sm py-4 px-5 sticky top-0 z-30">
@@ -163,7 +185,7 @@ function Header({ cartCount, onCartClick, onProfileClick, onBack, showBack }) {
   );
 }
 
-// ====== Banner/Promo ======
+// --- BannerPromo ---
 function BannerPromo() {
   return (
     <div className="mt-6 px-5">
@@ -182,7 +204,7 @@ function BannerPromo() {
   );
 }
 
-// ====== TabBar ======
+// --- TabBar ---
 function TabBar({ tabs, active, setActive }) {
   return (
     <div className="flex border-b bg-white sticky top-[60px] z-20">
@@ -199,7 +221,7 @@ function TabBar({ tabs, active, setActive }) {
   );
 }
 
-// ====== SearchBar ======
+// --- SearchBar ---
 function SearchBar({ searchQuery, setSearchQuery, filter, setFilter, enableAdvanced }) {
   return (
     <div className="px-5 mt-4">
@@ -247,7 +269,7 @@ function SearchBar({ searchQuery, setSearchQuery, filter, setFilter, enableAdvan
   );
 }
 
-// ====== Category ======
+// --- CategoryList ---
 function CategoryList({ selectedCategory, onSelectCategory }) {
   return (
     <div className="mt-6 px-5">
@@ -268,7 +290,7 @@ function CategoryList({ selectedCategory, onSelectCategory }) {
   );
 }
 
-// ====== Food List ======
+// --- FoodList ---
 function FoodList({ foods, onAddToCart, searchQuery, favorites, onToggleFavorite, onShowReviews, reviews }) {
   return (
     <div className="mt-6 px-5 mb-24">
@@ -329,7 +351,7 @@ function FoodList({ foods, onAddToCart, searchQuery, favorites, onToggleFavorite
   );
 }
 
-// ====== รีวิวสินค้า Modal ======
+// --- FoodReviewModal ---
 function FoodReviewModal({ food, reviews, onClose, onAddReview, user }) {
   const [newReview, setNewReview] = React.useState({ rating: 5, comment: "" });
   const [showForm, setShowForm] = React.useState(false);
@@ -400,7 +422,7 @@ function FoodReviewModal({ food, reviews, onClose, onAddReview, user }) {
   );
 }
 
-// ====== Modal เลือกตัวเลือกสินค้า ======
+// --- ItemOptionsModal ---
 function ItemOptionsModal({ item, isOpen, onClose, onAddToCartWithOptions }) {
   const [selectedOptions, setSelectedOptions] = React.useState({});
   const [quantity, setQuantity] = React.useState(1);
@@ -548,7 +570,7 @@ function ItemOptionsModal({ item, isOpen, onClose, onAddToCartWithOptions }) {
   );
 }
 
-// ====== Cart Item ======
+// --- CartItem ---
 function CartItem({ item, onUpdateQty, onRemove }) {
   const restaurant = restaurants.find(r => r.id === item.restaurantId);
   return (
@@ -592,7 +614,7 @@ function CartItem({ item, onUpdateQty, onRemove }) {
   );
 }
 
-// ====== Cart Page ======
+// --- CartPage ---
 function CartPage({ cart, onUpdateQty, onRemoveItem, onBack, onCheckout, onPay, totalAmount }) {
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
   const deliveryFee = DELIVERY_FEE;
@@ -666,7 +688,7 @@ function CartPage({ cart, onUpdateQty, onRemoveItem, onBack, onCheckout, onPay, 
   );
 }
 
-// ====== Payment Page ======
+// --- PaymentPage ---
 function PaymentPage({ amount, onCancel, onConfirm }) {
   const [secondsLeft, setSecondsLeft] = React.useState(600); // 10 นาที
 
@@ -690,11 +712,11 @@ function PaymentPage({ amount, onCancel, onConfirm }) {
         <h2 className="text-xl font-bold text-gray-900 mb-4">ชำระเงิน</h2>
         <div className="bg-white rounded-xl p-4 shadow-sm flex flex-col items-center mb-6">
           <img
-  src={`https://promptpay.io/0809614423/${amount}.png`}
-  alt="QR Code"
-  className="w-52 h-52 object-contain mb-4"
-  style={{ background: "#fff", borderRadius: "12px" }}
-/>
+            src={`https://promptpay.io/0809614423/${amount}.png`}
+            alt="QR Code"
+            className="w-52 h-52 object-contain mb-4"
+            style={{ background: "#fff", borderRadius: "12px" }}
+          />
           <div className="text-red-600 text-lg font-bold mb-2">
             เวลาคงเหลือ: {formatTime(secondsLeft)}
           </div>
@@ -725,7 +747,7 @@ function PaymentPage({ amount, onCancel, onConfirm }) {
   );
 }
 
-// ====== Payment Success Modal ======
+// --- PaymentSuccessModal ---
 function PaymentSuccessModal({ onClose }) {
   return (
     <div className="modal-overlay">
@@ -744,10 +766,21 @@ function PaymentSuccessModal({ onClose }) {
   );
 }
 
-// ====== Profile Page ======
+// --- ProfilePage ---
 function ProfilePage({ user, setUser, onBack, onShowOrderHistory }) {
   const [edit, setEdit] = React.useState(false);
   const [form, setForm] = React.useState(user);
+
+  // ฟังก์ชันที่เซฟ user ลง localStorage ด้วย
+  const handleSaveProfile = (newData) => {
+    setUser(f => {
+      const update = { ...f, ...newData };
+      saveUserToStorage(update);
+      return update;
+    });
+    setEdit(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
       <Header cartCount={0} showBack={true} onBack={onBack} />
@@ -764,16 +797,18 @@ function ProfilePage({ user, setUser, onBack, onShowOrderHistory }) {
           </div>
           {edit ? (
             <form className="space-y-2"
-              onSubmit={e => { e.preventDefault(); setUser(f=> ({...f, ...form})); setEdit(false);}}>
+              onSubmit={e => { e.preventDefault(); handleSaveProfile(form); }}>
               <input className="block border px-3 py-2 rounded w-full" placeholder="ชื่อ"
                 value={form.name} onChange={e=>setForm(f=>({...f, name:e.target.value}))}/>
               <input className="block border px-3 py-2 rounded w-full" placeholder="เบอร์โทร"
                 value={form.phone} onChange={e=>setForm(f=>({...f, phone:e.target.value}))}/>
               <input className="block border px-3 py-2 rounded w-full" placeholder="ที่อยู่"
                 value={form.address} onChange={e=>setForm(f=>({...f, address:e.target.value}))}/>
-              <div className="flex gap-2"><button type="submit" className="bg-green-500 text-white px-4 py-2 rounded font-bold flex-1">บันทึก</button>
-              <button type="button" className="bg-gray-300 text-gray-700 px-4 py-2 rounded font-bold flex-1"
-                onClick={() => setEdit(false)}>ยกเลิก</button></div>
+              <div className="flex gap-2">
+                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded font-bold flex-1">บันทึก</button>
+                <button type="button" className="bg-gray-300 text-gray-700 px-4 py-2 rounded font-bold flex-1"
+                  onClick={() => setEdit(false)}>ยกเลิก</button>
+              </div>
             </form>
           ) : (
             <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded font-bold"
@@ -791,7 +826,7 @@ function ProfilePage({ user, setUser, onBack, onShowOrderHistory }) {
   );
 }
 
-// ====== รายการโปรด ======
+// --- FavoritePage ---
 function FavoritePage({ favoriteFoods, onShowFood, onBack }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -821,7 +856,7 @@ function FavoritePage({ favoriteFoods, onShowFood, onBack }) {
   );
 }
 
-// ====== ประวัติออเดอร์ =======
+// --- OrderHistoryPage ---
 function OrderHistoryPage({ orderHistory, onBack }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
@@ -881,16 +916,8 @@ function OrderHistoryPage({ orderHistory, onBack }) {
   );
 }
 
-// ====== บันทึกออเดอร์ลง localStorage ======
-function saveOrderToStorage(order) {
-  const orders = JSON.parse(localStorage.getItem("orders") || "[]");
-  orders.unshift(order);
-  localStorage.setItem("orders", JSON.stringify(orders));
-}
-
-// ====== Main App ======
+// --- Main App ---
 function App() {
-  // State
   const [page, setPage] = React.useState("home");
   const [selectedCategory, setSelectedCategory] = React.useState("all");
   const [cart, setCart] = React.useState([]);
@@ -899,16 +926,13 @@ function App() {
   const [selectedItem, setSelectedItem] = React.useState(null);
   const [showOptionsModal, setShowOptionsModal] = React.useState(false);
   const [showPaymentSuccess, setShowPaymentSuccess] = React.useState(false);
-  const [user, setUser] = React.useState({ ...demoUser });
+  const [user, setUser] = React.useState(loadUserFromStorage());
   const [showFavoritePage, setShowFavoritePage] = React.useState(false);
   const [showOrderHistory, setShowOrderHistory] = React.useState(false);
 
   // Review Modal
   const [reviewFoodId, setReviewFoodId] = React.useState(null);
   const [reviews, setReviews] = React.useState(initialReviews);
-
-  // Order History (simulate backend orders)
-  const [orderHistory, setOrderHistory] = React.useState([]);
 
   // Filter logic
   let filteredFoods = foodItems;
@@ -974,12 +998,16 @@ function App() {
   // รายการโปรด
   const favorites = user.favorites || [];
   const handleToggleFavorite = (foodId) => {
-    setUser(u => ({
-      ...u,
-      favorites: favorites.includes(foodId)
-        ? favorites.filter(id => id !== foodId)
-        : [...favorites, foodId]
-    }));
+    setUser(u => {
+      const update = {
+        ...u,
+        favorites: favorites.includes(foodId)
+          ? favorites.filter(id => id !== foodId)
+          : [...favorites, foodId]
+      };
+      saveUserToStorage(update);
+      return update;
+    });
   };
   const favoriteFoods = foodItems.filter(f => favorites.includes(f.id));
 
@@ -1017,11 +1045,14 @@ function App() {
       date: new Date(),
     };
     saveOrderToStorage(newOrder);
-    setOrderHistory(orders => [newOrder, ...orders]);
-    setUser(u => ({
-      ...u,
-      orderHistory: [newOrder, ...(u.orderHistory || [])]
-    }));
+    setUser(u => {
+      const newUser = {
+        ...u,
+        orderHistory: [newOrder, ...(u.orderHistory || [])]
+      };
+      saveUserToStorage(newUser);
+      return newUser;
+    });
     setShowPaymentSuccess(true);
     setCart([]);
   };
