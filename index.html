@@ -147,7 +147,7 @@ function loadOrderHistoryFromStorage(phone) {
   } catch (e) { return []; }
 }
 async function sendOrderToMake(order) {
-  await fetch('https://hook.make.com/xxxxxxxxxxxxxxxxxxxxx', { // ใส่ URL ของคุณ
+  await fetch('https://hook.eu2.make.com/jz59mj6cjqgpzs23yhqx1v1thatq1i3o', { // ใส่ URL ของคุณ
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(order)
