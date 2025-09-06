@@ -43,7 +43,7 @@
 <div id="root"></div>
 <script type="text/babel">
 
-const DELIVERY_FEE = 30;
+const DELIVERY_FEE = 50;
 const COLORS = { primary: "#FF5722", accent: "#FFC107", secondary: "#009688" };
 const foodOptions = {
   spiciness: [
@@ -195,7 +195,7 @@ function BannerPromo() {
         <h2 className="text-white text-2xl font-bold drop-shadow-lg mb-1 text-center">
           สั่งง่าย ส่งไว ถึงหน้าบ้าน
           <br/>
-          <span className="block text-xl font-bold mt-2 text-yellow-300 glow">ค่าจัดส่งเพียง 30 บาท</span>
+          <span className="block text-xl font-bold mt-2 text-yellow-300 glow">ค่าจัดส่งเริ่มต้นเพียง 50 บาท</span>
         </h2>
         <div className="text-white text-sm font-medium mt-2 text-center">
           หิวเมื่อไหร่ก็สั่งได้ สะดวกทุกวัน อร่อยหลากหลายเมนู!
@@ -729,7 +729,7 @@ function PaymentPage({ amount, onCancel, onConfirm }) {
   </button>
   <button
     className="flex-1 bg-yellow-500 text-white py-3 rounded-xl font-bold"
-    onClick={() => window.open('https://line.me/R/ti/p/@029lbtmu')}
+    onClick={() => window.open('https://line.me/R/ti/p/@600ncyqq')}
   >
     ติดต่อสั่งเงินสดทาง LINE
   </button>
@@ -756,6 +756,9 @@ function PaymentSuccessModal({ onClose }) {
         >
           กลับสู่หน้าหลัก
         </button>
+        <div className="text-red-500 text-xs mt-3 text-center">
+          หากพบว่าเป็นการสั่งเพื่อก่อกวนหรือกลั่นแกล้ง ทางร้านจะดำเนินการตามกฎหมายอย่างถึงที่สุด
+        </div>
       </div>
     </div>
   );
