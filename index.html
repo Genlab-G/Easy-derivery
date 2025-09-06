@@ -324,12 +324,6 @@ function FoodList({ foods, onAddToCart, searchQuery, favorites, onToggleFavorite
                   >
                     <i className="fas fa-heart text-xl"></i>
                   </button>
-                  <div className="absolute top-2 left-2 bg-white rounded-full px-2 py-1 flex items-center shadow cursor-pointer"
-                    onClick={() => onShowReviews(food.id)}>
-                    <i className="fas fa-star text-yellow-400 text-xs mr-1"></i>
-                    <span className="text-xs font-bold">{food.rating}</span>
-                    <span className="ml-1 text-xs text-gray-400">({foodReviews.length})</span>
-                  </div>
                 </div>
                 <div className="p-4">
                   <h3 className="font-bold text-gray-900 text-base">{food.name}</h3>
@@ -369,10 +363,6 @@ function FoodReviewModal({ food, reviews, onClose, onAddReview, user }) {
           </div>
           <div className="mb-4">
             <img src={food.image} alt={food.name} className="w-24 h-24 object-cover rounded-xl mx-auto" />
-            <div className="text-center text-lg font-bold mt-2">
-              คะแนนเฉลี่ย <span className="text-yellow-500">{food.rating}</span>
-              <span className="ml-2 text-xs text-gray-500">({reviews.length} รีวิว)</span>
-            </div>
           </div>
           <div className="mb-4">
             {reviews.length === 0 ? (
@@ -671,14 +661,8 @@ function CartPage({ cart, onUpdateQty, onRemoveItem, onBack, onCheckout, onPay, 
             </div>
             <div className="flex space-x-3">
               <button
-                onClick={onCheckout}
-                className="flex-1 bg-red-500 text-white py-4 rounded-xl font-bold text-lg shadow-md hover:bg-red-600 transition-colors"
-              >
-                สั่งอาหาร
-              </button>
-              <button
                 onClick={onPay}
-                className="flex-1 bg-green-500 text-white py-4 rounded-xl font-bold text-lg shadow-md hover:bg-green-600 transition-colors"
+                className="flex-1 bg-red-500 text-white py-4 rounded-xl font-bold text-lg shadow-md hover:bg-red-600 transition-colors"
               >
                 ชำระเงิน
               </button>
@@ -730,7 +714,7 @@ function PaymentPage({ amount, onCancel, onConfirm }) {
             รบกวนแจ้งหลักฐานการโอนผ่านแชทไลน์
           </div>
         </div>
-        <div className="flex space-x-3">
+       <div className="flex space-x-3">
   <button
     className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold"
     onClick={onCancel}
@@ -745,10 +729,13 @@ function PaymentPage({ amount, onCancel, onConfirm }) {
   </button>
   <button
     className="flex-1 bg-yellow-500 text-white py-3 rounded-xl font-bold"
-    onClick={onConfirm}
+    onClick={() => window.open('https://line.me/R/ti/p/@600ncyqq')}
   >
-    ชำระแบบเงินสด
+    ติดต่อสั่งเงินสดทาง LINE
   </button>
+</div>
+<div className="text-red-500 text-sm mt-2 text-center">
+  สำหรับผู้ที่ต้องการชำระเงินสด กรุณาสั่งซื้อผ่านช่องทาง LINE เท่านั้น
 </div>
       </div>
     </div>
@@ -789,46 +776,51 @@ function ProfilePage({ user, setUser, onBack, onShowOrderHistory }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24 flex flex-col items-center">
-      <Header cartCount={0} showBack={true} onBack={onBack} />
-      <div className="px-5 pt-4 w-full max-w-md">
-        <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">โปรไฟล์ของฉัน</h2>
-        <div className="bg-white rounded-xl p-4 shadow space-y-5 flex flex-col items-center">
-          <div className="flex items-center gap-3 mb-2">
-            <i className="fas fa-user-circle text-4xl text-gray-400"></i>
-            <span className="font-bold text-lg">{user.name}</span>
+    <div className="min-h-screen bg-gradient-to-br from-orange-100 via-yellow-50 to-white flex items-center justify-center pb-24">
+      <div className="w-full max-w-md mx-auto">
+        <Header cartCount={0} showBack={true} onBack={onBack} />
+        <div className="flex flex-col items-center mt-6">
+          <div className="bg-white rounded-2xl shadow-lg p-8 w-full flex flex-col items-center">
+            <div className="mb-5">
+              <i className="fas fa-user-circle text-6xl text-orange-300"></i>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">โปรไฟล์ของฉัน</h2>
+            {!edit ? (
+              <>
+                <div className="text-lg font-semibold text-gray-800 mt-2">{user.name || <span className="text-gray-400">ชื่อ</span>}</div>
+                <div className="mt-2 text-sm text-gray-700">
+                  <span className="block mb-1"><i className="fas fa-phone-alt mr-2 text-orange-400"></i> {user.phone || <span className="text-gray-400">เบอร์โทร</span>}</span>
+                  <span className="block mb-1"><i className="fas fa-map-marker-alt mr-2 text-orange-400"></i> {user.address || <span className="text-gray-400">ที่อยู่</span>}</span>
+                </div>
+                <button className="mt-6 bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-full font-bold shadow transition"
+                  onClick={() => setEdit(true)}>
+                  แก้ไขข้อมูล
+                </button>
+                <button className="mt-3 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-bold shadow transition"
+                  onClick={onShowOrderHistory}>
+                  ประวัติการสั่งซื้อของฉัน
+                </button>
+              </>
+            ) : (
+              <form className="w-full space-y-4 mt-2"
+                onSubmit={e => { e.preventDefault(); handleSaveProfile(form); }}>
+                <input className="block border px-4 py-3 rounded-full w-full focus:ring-2 focus:ring-orange-200 text-lg"
+                  placeholder="ชื่อ"
+                  value={form.name} onChange={e=>setForm(f=>({...f, name:e.target.value}))}/>
+                <input className="block border px-4 py-3 rounded-full w-full focus:ring-2 focus:ring-orange-200 text-lg"
+                  placeholder="เบอร์โทร"
+                  value={form.phone} onChange={e=>setForm(f=>({...f, phone:e.target.value}))}/>
+                <input className="block border px-4 py-3 rounded-full w-full focus:ring-2 focus:ring-orange-200 text-lg"
+                  placeholder="ที่อยู่"
+                  value={form.address} onChange={e=>setForm(f=>({...f, address:e.target.value}))}/>
+                <div className="flex gap-3 mt-3">
+                  <button type="submit" className="bg-green-500 text-white px-6 py-2 rounded-full font-bold flex-1 shadow">บันทึก</button>
+                  <button type="button" className="bg-gray-200 text-gray-700 px-6 py-2 rounded-full font-bold flex-1 shadow"
+                    onClick={() => setEdit(false)}>ยกเลิก</button>
+                </div>
+              </form>
+            )}
           </div>
-          <div className="text-sm text-gray-700 text-center mb-2">
-            <div>เบอร์โทร: {user.phone || <span className="text-gray-400">-</span>}</div>
-            <div>ที่อยู่: {user.address || <span className="text-gray-400">-</span>}</div>
-          </div>
-          {/* ปุ่มไลน์ login ให้อยู่กึ่งกลางและขนาดสมดุล */}
-          <LineLoginButton />
-          {edit ? (
-            <form className="space-y-2 w-full flex flex-col items-center"
-              onSubmit={e => { e.preventDefault(); handleSaveProfile(form); }}>
-              <input className="block border px-3 py-2 rounded w-full" placeholder="ชื่อ"
-                value={form.name} onChange={e=>setForm(f=>({...f, name:e.target.value}))}/>
-              <input className="block border px-3 py-2 rounded w-full" placeholder="เบอร์โทร"
-                value={form.phone} onChange={e=>setForm(f=>({...f, phone:e.target.value}))}/>
-              <input className="block border px-3 py-2 rounded w-full" placeholder="ที่อยู่"
-                value={form.address} onChange={e=>setForm(f=>({...f, address:e.target.value}))}/>
-              <div className="flex gap-2 w-full">
-                <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded font-bold flex-1">บันทึก</button>
-                <button type="button" className="bg-gray-300 text-gray-700 px-4 py-2 rounded font-bold flex-1"
-                  onClick={() => setEdit(false)}>ยกเลิก</button>
-              </div>
-            </form>
-          ) : (
-            <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded font-bold w-full"
-              onClick={() => setEdit(true)}>
-              แก้ไขข้อมูล
-            </button>
-          )}
-          <button className="w-full bg-blue-500 text-white py-2 rounded font-bold"
-            onClick={onShowOrderHistory}>
-            ประวัติการสั่งซื้อของฉัน
-          </button>
         </div>
       </div>
     </div>
@@ -914,26 +906,6 @@ function OrderHistoryPage({ orderHistory, onBack }) {
   );
 }
 
-function LineLoginButton() {
-  const CLIENT_ID = "2008060172";
-  const REDIRECT_URI = "https://hook.eu2.make.com/knhglg1mx7w8d5d96ixb2serwa7bk9py";
-  const handleLogin = () => {
-    const state = Math.random().toString(36).substr(2);
-    const scope = "profile openid";
-    const url = `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=${state}&scope=${scope}`;
-    window.location.href = url;
-  };
-  return (
-    <button
-      className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded font-bold flex items-center justify-center gap-2 text-base shadow transition mb-2"
-      onClick={handleLogin}
-      style={{ minHeight: "48px" }}
-    >
-      <i className="fab fa-line text-xl"></i>
-      เข้าสู่ระบบด้วย LINE
-    </button>
-  );
-}
 // --- Main App ---
 function App() {
   const [page, setPage] = React.useState("home");
