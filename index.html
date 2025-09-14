@@ -72,7 +72,7 @@ const foodOptions = {
 };
 const drinkOptions = {
   sweetness: [
-    { id: "normal", name: "ปกติ", price: 0 },
+    { id: "normal", name: "หวานปกติ", price: 0 },
     { id: "less", name: "หวานน้อย (50%)", price: 0 },
     { id: "little", name: "หวานนิดเดียว (25%)", price: 0 },
     { id: "none", name: "ไม่หวาน (0%)", price: 0 }
@@ -1295,16 +1295,34 @@ function App() {
       ...item,
       restaurantName: restaurants.find(r => r.id === item.restaurantId)?.name || ""
     }));
+    
+    const orderSummary = cartWithRestaurantName.map((item, idx) => {
+    const options = item.selectedOptions
+      ? Object.entries(item.selectedOptions)
+          .filter(([k]) => k !== "note")
+          .map(([k, v]) => v?.name)
+          .join(", ")
+      : "";
+    const note = item.selectedOptions?.note ? `หมายเหตุ: ${item.selectedOptions.note}` : "";
+    return (
+      `${idx+1}. ${item.name} (${item.restaurantName})\n`
+      + (options ? `- ออปชั่น: ${options}\n` : "")
+      + `- จำนวน: ${item.qty}\n`
+      + (note ? `- ${note}\n` : "")
+      + `- ราคารวม: ${formatCurrency(item.price * item.qty)}\n`
+    );
+  }).join("\n");
 
     const newOrder = {
-      orderId,
-      userName: user.name,
-      userInfo: { name: user.name, phone: user.phone, address: user.address },
-      cart: cartWithRestaurantName,
-      amount: totalAmount,
-      status: "waiting",
-      date: new Date(),
-    };
+  orderId,
+  userName: user.name,
+  userInfo: { name: user.name, phone: user.phone, address: user.address },
+  cart: cartWithRestaurantName,
+  amount: totalAmount,
+  status: "waiting",
+  date: new Date(),
+  orderSummary, // <-- คราวนี้มีค่าถูกต้อง
+};
     sendOrderToMake(newOrder);
     setUser(u => {
       const newUser = {
