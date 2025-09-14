@@ -904,6 +904,28 @@ function PaymentPage({ amount, onCancel, onConfirm }) {
   );
 }
 
+// --- PaymentSuccessModal ---
+function PaymentSuccessModal({ onClose }) {
+  return (
+    <div className="modal-overlay">
+      <div className="bg-white rounded-2xl p-8 modal-content flex flex-col items-center">
+        <i className="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
+        <h3 className="font-bold text-xl text-green-600 mb-2">ชำระเงินเรียบร้อยแล้ว</h3>
+        <p className="text-gray-700 mb-4 text-center">ขอบคุณสำหรับการสั่งซื้อ<br/>โปรดรอรับอาหารตามเวลาที่กำหนด</p>
+        <button
+          className="bg-red-500 text-white py-2 px-5 rounded-xl font-bold"
+          onClick={onClose}
+        >
+          กลับสู่หน้าหลัก
+        </button>
+        <div className="text-red-500 text-xs mt-3 text-center">
+          หากพบว่าเป็นการสั่งเพื่อก่อกวนหรือกลั่นแกล้ง ทางร้านจะดำเนินการตามกฎหมายอย่างถึงที่สุด
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- ProfilePage ---
 function ProfilePage({ user, setUser, onBack, onShowOrderHistory }) {
   const [edit, setEdit] = React.useState(false);
