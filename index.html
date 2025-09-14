@@ -418,6 +418,8 @@ function FoodReviewModal({ food, reviews, onClose, onAddReview, user }) {
 function ItemOptionsModal({ item, isOpen, onClose, onAddToCartWithOptions }) {
   const [selectedOptions, setSelectedOptions] = React.useState({});
   const [quantity, setQuantity] = React.useState(1);
+  const [note, setNote] = React.useState(""); // เพิ่ม state สำหรับรายละเอียดเพิ่มเติม
+
   React.useEffect(() => {
     const defaultOptions = {};
     if (item.options.includes('spiciness')) defaultOptions.spiciness = foodOptions.spiciness[1];
@@ -425,8 +427,11 @@ function ItemOptionsModal({ item, isOpen, onClose, onAddToCartWithOptions }) {
     if (item.options.includes('sweetness')) defaultOptions.sweetness = drinkOptions.sweetness[0];
     if (item.options.includes('ice')) defaultOptions.ice = drinkOptions.ice[0];
     if (item.options.includes('noodleType')) defaultOptions.noodleType = foodOptions.noodleType[0];
-    setSelectedOptions(defaultOptions); setQuantity(1);
+    setSelectedOptions(defaultOptions);
+    setQuantity(1);
+    setNote(""); // reset note ทุกครั้งที่เปิด
   }, [item]);
+
   if (!isOpen) return null;
   const restaurant = restaurants.find(r => r.id === item.restaurantId);
 
@@ -439,7 +444,8 @@ function ItemOptionsModal({ item, isOpen, onClose, onAddToCartWithOptions }) {
     return total * quantity;
   };
   const handleAddToCart = () => {
-    onAddToCartWithOptions(item, selectedOptions, quantity);
+    // ส่ง note ไปกับ options
+    onAddToCartWithOptions(item, { ...selectedOptions, note }, quantity);
     onClose();
   };
 
@@ -546,6 +552,18 @@ function ItemOptionsModal({ item, isOpen, onClose, onAddToCartWithOptions }) {
               </div>
             </div>
           )}
+          {/* เพิ่มช่องกรอกเพิ่มเติม */}
+          <div className="mb-6">
+            <h4 className="font-medium text-gray-900 mb-2">รายละเอียดเพิ่มเติม (ถ้ามี)</h4>
+            <textarea
+  className="w-full border rounded-lg p-2 text-gray-700 resize-none overflow-y-auto"
+  placeholder="เช่น เพิ่มไข่ดาว, ไม่ใส่ผักชี, ของแถม ฯลฯ"
+  value={note}
+  onChange={e => setNote(e.target.value)}
+  rows={2}
+  style={{ maxHeight: "60px" }} // ล็อกความสูง max 2 แถว
+/>
+          </div>
           <div className="border-t pt-4 mt-4">
             <div className="flex justify-between items-center mb-4">
               <span className="font-bold text-gray-900">รวม</span>
@@ -574,9 +592,13 @@ function CartItem({ item, onUpdateQty, onRemove }) {
           {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
             <div className="mt-2 text-xs text-gray-600">
               {Object.entries(item.selectedOptions).map(([key, option]) => (
-                <div key={key}>{option?.name}</div>
+                key !== "note" && <div key={key}>{option?.name}</div>
               ))}
             </div>
+          )}
+          {/* --- ใส่ตรงนี้ --- */}
+          {item.selectedOptions && item.selectedOptions.note && (
+            <div className="mt-1 text-xs text-gray-500">หมายเหตุ: {item.selectedOptions.note}</div>
           )}
           <p className="text-red-600 font-bold mt-1">{formatCurrency(item.price)}</p>
         </div>
@@ -953,9 +975,12 @@ function OrderHistoryPage({ orderHistory }) {
                         {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
                           <ul className="pl-4 text-xs text-gray-500 list-none">
                             {Object.entries(item.selectedOptions).map(([optKey, optVal]) => (
-                              <li key={optKey}>{optVal?.name}</li>
+                              optKey !== "note" && <li key={optKey}>{optVal?.name}</li>
                             ))}
                           </ul>
+                        )}
+                        {item.selectedOptions && item.selectedOptions.note && (
+                          <div className="mt-1 text-xs text-gray-500">หมายเหตุ: {item.selectedOptions.note}</div>
                         )}
                       </li>
                     ))}
