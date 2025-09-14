@@ -1180,32 +1180,37 @@ function App() {
     }
   };
   const addToCart = (item, selectedOptions = {}, quantity) => {
-    setCart(prevCart => {
-      let finalPrice = item.price;
-      Object.values(selectedOptions).forEach(option => { if (option) finalPrice += option.price; });
-      const existingItemIndex = prevCart.findIndex(cartItem =>
-        cartItem.id === item.id &&
-        JSON.stringify(cartItem.selectedOptions || {}) === JSON.stringify(selectedOptions || {})
-      );
-      if (existingItemIndex > -1) {
-        const updatedCart = [...prevCart];
-        updatedCart[existingItemIndex].qty += quantity;
-        return updatedCart;
-      } else {
-        return [...prevCart, {
-          ...item,
-          qty: quantity,
-          price: finalPrice,
-          selectedOptions: selectedOptions || {},
-          originalPrice: item.price
-        }];
-      }
+  setCart(prevCart => {
+    // คำนวณราคาสำหรับรายการใหม่ (ไม่นับ option ที่เป็น note)
+    let finalPrice = item.price;
+    Object.entries(selectedOptions).forEach(([key, option]) => {
+      if (key !== "note" && option) finalPrice += option.price;
     });
-    // Toast แจ้งเตือน (กรณีมี options)
-    setToastText(`เพิ่ม "${item.name}" ในตะกร้าแล้ว`);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 1400);
-  };
+    const existingItemIndex = prevCart.findIndex(cartItem =>
+      cartItem.id === item.id &&
+      JSON.stringify(cartItem.selectedOptions || {}) === JSON.stringify(selectedOptions || {})
+    );
+    if (existingItemIndex > -1) {
+      // ถ้าเจอรายการเดิม เพิ่มจำนวนอย่างเดียว ไม่คำนวณราคาใหม่
+      const updatedCart = [...prevCart];
+      updatedCart[existingItemIndex].qty += quantity;
+      return updatedCart;
+    } else {
+      // รายการใหม่ คำนวณราคาใหม่
+      return [...prevCart, {
+        ...item,
+        qty: quantity,
+        price: finalPrice,
+        selectedOptions: selectedOptions || {},
+        originalPrice: item.price
+      }];
+    }
+  });
+  // Toast แจ้งเตือน
+  setToastText(`เพิ่ม "${item.name}" ในตะกร้าแล้ว`);
+  setShowToast(true);
+  setTimeout(() => setShowToast(false), 1400);
+};
   // อัปเดตจำนวน
   const updateQty = (cartItem, newQty) => {
     if (newQty < 1) return;
