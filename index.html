@@ -607,29 +607,17 @@ function CartItem({ item, onUpdateQty, onRemove }) {
 }
 
 // --- CartPage ---
-function CartPage({ cart, onUpdateQty, onRemoveItem, onBack, onCheckout, onPay, totalAmount }) {
+function CartPage({ cart, onUpdateQty, onRemoveItem, onCheckout, onPay, totalAmount }) {
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-// const deliveryFee = DELIVERY_FEE; // ยกเลิกใช้
-const total = subtotal; // ไม่บวกค่าจัดส่ง
+  const total = subtotal;
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <Header
-        cartCount={cart.reduce((sum, item) => sum + item.qty, 0)}
-        onBack={onBack}
-        showBack={true}
-      />
       <div className="px-5 pt-4">
         <h2 className="text-xl font-bold text-gray-900 mb-6">ตะกร้าสินค้า</h2>
         {cart.length === 0 ? (
           <div className="text-center py-10">
             <i className="fas fa-shopping-cart text-gray-300 text-5xl mb-4"></i>
             <p className="text-gray-500">ยังไม่มีสินค้าในตะกร้า</p>
-            <button
-              onClick={onBack}
-              className="mt-4 text-red-600 font-medium"
-            >
-              เลือกเมนูเลย
-            </button>
           </div>
         ) : (
           <>
@@ -650,21 +638,21 @@ const total = subtotal; // ไม่บวกค่าจัดส่ง
                   <span className="font-medium">{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-center">
-  <div className="bg-gradient-to-r from-orange-100 via-yellow-50 to-white border-l-4 border-orange-400 rounded-xl p-4 w-full my-2 shadow flex flex-col items-center">
-    <div className="flex items-center gap-2 mb-2">
-      <i className="fas fa-motorcycle text-orange-500 text-lg"></i>
-      <span className="font-bold text-orange-700 text-base">ค่าส่งคิดตามระยะทาง</span>
-    </div>
-    <div className="w-full max-w-xs text-gray-800 text-sm font-medium text-center">
-      <div className="py-1">0-3 กม. <span className="text-orange-600 font-bold">40 บาท</span></div>
-      <div className="py-1">3-6 กม. <span className="text-orange-600 font-bold">60 บาท</span></div>
-      <div className="py-1">6-10 กม. <span className="text-orange-600 font-bold">80 บาท</span></div>
-    </div>
-    <div className="mt-2 text-xs text-gray-500 italic text-center">
-      *ค่าส่งจะแจ้งหลังจากร้านได้รับ location ทาง LINE แล้ว
-    </div>
-  </div>
-</div>
+                  <div className="bg-gradient-to-r from-orange-100 via-yellow-50 to-white border-l-4 border-orange-400 rounded-xl p-4 w-full my-2 shadow flex flex-col items-center">
+                    <div className="flex items-center gap-2 mb-2">
+                      <i className="fas fa-motorcycle text-orange-500 text-lg"></i>
+                      <span className="font-bold text-orange-700 text-base">ค่าส่งคิดตามระยะทาง</span>
+                    </div>
+                    <div className="w-full max-w-xs text-gray-800 text-sm font-medium text-center">
+                      <div className="py-1">0-3 กม. <span className="text-orange-600 font-bold">40 บาท</span></div>
+                      <div className="py-1">3-6 กม. <span className="text-orange-600 font-bold">60 บาท</span></div>
+                      <div className="py-1">6-10 กม. <span className="text-orange-600 font-bold">80 บาท</span></div>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-500 italic text-center">
+                      *ค่าส่งจะแจ้งหลังจากร้านได้รับ location ทาง LINE แล้ว
+                    </div>
+                  </div>
+                </div>
                 <div className="border-t pt-3 flex justify-between font-bold text-lg">
                   <span>รวมทั้งหมด</span>
                   <span className="text-red-600">{formatCurrency(total)}</span>
@@ -705,7 +693,6 @@ function PaymentPage({ amount, onCancel, onConfirm }) {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-24 flex flex-col items-center justify-start">
-      <Header cartCount={0} showBack={true} onBack={onCancel} />
       <div className="px-5 pt-6 w-full max-w-md">
         <h2 className="text-xl font-bold text-gray-900 mb-4">ชำระเงิน</h2>
         <div className="bg-white rounded-xl p-4 shadow-sm flex flex-col items-center mb-6">
@@ -783,9 +770,14 @@ function ProfilePage({ user, setUser, onBack, onShowOrderHistory }) {
 
   const handleSaveProfile = (newData) => {
   if (!newData.name || !newData.phone || !newData.address) {
-    alert("กรุณากรอกชื่อ เบอร์โทร และที่อยู่ (หรือวางลิงก์ Google Maps) ให้ครบถ้วน");
-    return;
-  }
+  alert("กรุณากรอกชื่อ เบอร์โทร และลิงก์ Google Maps ให้ครบถ้วน");
+  return;
+}
+const googleMapsPattern = /^(https?:\/\/)?(www\.)?(google\.[a-z.]+\/maps|goo\.gl\/maps)\/.+$/i;
+if (!googleMapsPattern.test(newData.address.trim())) {
+  alert("กรุณาวางลิงก์จาก Google Maps เท่านั้น ตัวอย่าง https://goo.gl/maps/xxxx หรือ https://www.google.com/maps/...");
+  return;
+}
   setUser(f => {
     const update = { ...f, ...newData };
     saveUserToStorage(update);
@@ -797,7 +789,6 @@ function ProfilePage({ user, setUser, onBack, onShowOrderHistory }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-100 via-yellow-50 to-white flex items-center justify-center pb-24">
       <div className="w-full max-w-md mx-auto">
-        <Header cartCount={0} showBack={true} onBack={onBack} />
         <div className="flex flex-col items-center mt-6">
           <div className="bg-white rounded-2xl shadow-lg p-8 w-full flex flex-col items-center">
             <div className="mb-5">
@@ -850,40 +841,93 @@ function ProfilePage({ user, setUser, onBack, onShowOrderHistory }) {
 }
 
 // --- FavoritePage ---
-function FavoritePage({ favoriteFoods, onShowFood, onBack }) {
+function FavoritePage({
+  favoriteFoods,
+  onShowFood,
+  onAddToCart,
+  favorites,
+  onToggleFavorite,
+  reviews,
+  cartCount,
+  onCartClick
+}) {
+  const [selectedItem, setSelectedItem] = React.useState(null);
+  const [showOptionsModal, setShowOptionsModal] = React.useState(false);
+
+  const handleAddToCartClick = (item) => {
+    if (item.options && item.options.length > 0) {
+      setSelectedItem(item);
+      setShowOptionsModal(true);
+    } else {
+      onAddToCart(item, {}, 1);
+    }
+  };
+  const handleAddToCartWithOptions = (item, selectedOptions, quantity) => {
+    onAddToCart(item, selectedOptions, quantity);
+    setShowOptionsModal(false);
+  };
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <Header cartCount={0} showBack={true} onBack={onBack}/>
       <div className="px-5 pt-4">
         <h2 className="text-xl font-bold text-gray-900 mb-6">เมนูโปรดของฉัน</h2>
-        {favoriteFoods.length === 0
-          ? <div className="text-center text-gray-400 pt-10">ยังไม่มีเมนูโปรด</div>
-          : (
-            <div className="grid grid-cols-2 gap-4">
-              {favoriteFoods.map(food => (
-                <div key={food.id} className="food-card bg-white rounded-2xl shadow-sm overflow-hidden cursor-pointer"
-                  onClick={()=>onShowFood(food)}>
-                  <img src={food.image} alt={food.name} className="w-full h-28 object-cover"/>
-                  <div className="p-3">
-                    <div className="font-bold text-gray-900">{food.name}</div>
-                    <div className="text-xs text-gray-500">{restaurants.find(r=>r.id===food.restaurantId)?.name}</div>
-                    <div className="mt-1">{formatCurrency(food.price)}</div>
+        {favoriteFoods.length === 0 ? (
+          <div className="text-center py-10">
+            <i className="fas fa-heart text-gray-300 text-5xl mb-3"></i>
+            <p className="text-gray-500">ยังไม่มีเมนูโปรด</p>
+            <p className="text-sm text-gray-400 mt-1">กด ♥ เพิ่มเมนูโปรดจากหน้าแรก</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-5">
+            {favoriteFoods.map(food => {
+              const restaurant = restaurants.find(r => r.id === food.restaurantId);
+              const fav = favorites.includes(food.id);
+              const foodReviews = reviews.filter(r => r.foodId === food.id);
+              return (
+                <div key={food.id} className="food-card bg-white rounded-2xl shadow-xl overflow-hidden">
+                  <div className="relative">
+                    <img src={food.image} alt={food.name} className="w-full h-32 object-cover" />
+                    <button onClick={() => onToggleFavorite(food.id)}
+                      className={`absolute top-2 right-2 fav-heart ${fav ? "active" : ""}`}
+                      title={fav ? "นำออกจากรายการโปรด" : "เพิ่มในรายการโปรด"}
+                    >
+                      <i className="fas fa-heart text-xl"></i>
+                    </button>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-900 text-base">{food.name}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{restaurant?.name}</p>
+                    <div className="flex justify-between items-center mt-3">
+                      <span className="accent-price">{formatCurrency(food.price)}</span>
+                      <button
+                        onClick={() => handleAddToCartClick(food)}
+                        className="accent-btn w-9 h-9 flex items-center justify-center hover:bg-orange-600 transition"
+                      >
+                        <i className="fas fa-plus text-base"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )
-        }
+              );
+            })}
+          </div>
+        )}
       </div>
+      {selectedItem && (
+        <ItemOptionsModal
+          item={selectedItem}
+          isOpen={showOptionsModal}
+          onClose={() => setShowOptionsModal(false)}
+          onAddToCartWithOptions={handleAddToCartWithOptions}
+        />
+      )}
     </div>
   );
 }
 
 // --- OrderHistoryPage ---
-function OrderHistoryPage({ orderHistory, onBack }) {
+function OrderHistoryPage({ orderHistory }) {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
-      <Header cartCount={0} showBack={true} onBack={onBack}/>
       <div className="px-5 pt-4">
         <h2 className="text-xl font-bold text-gray-900 mb-6">ประวัติการสั่งซื้อ</h2>
         {orderHistory.length === 0
@@ -893,8 +937,8 @@ function OrderHistoryPage({ orderHistory, onBack }) {
               {orderHistory.map((order, i) => (
                 <div key={i} className="bg-white rounded-xl p-4 shadow">
                   <div className="flex justify-between items-center">
-  <span className="font-bold text-gray-800">#{order.orderId}</span>
-</div>
+                    <span className="font-bold text-gray-800">#{order.orderId}</span>
+                  </div>
                   <div className="text-xs text-gray-700 mb-1">
                     <span>ชื่อ: {order.userInfo?.name || '-'}</span>
                     <span className="ml-2">เบอร์โทร: {order.userInfo?.phone || '-'}</span>
@@ -906,7 +950,6 @@ function OrderHistoryPage({ orderHistory, onBack }) {
                     {order.cart.map((item, j) => (
                       <li key={j}>
                         {item.name} x {item.qty}
-                        {/* แสดงออปชั่น (options) */}
                         {item.selectedOptions && Object.keys(item.selectedOptions).length > 0 && (
                           <ul className="pl-4 text-xs text-gray-500 list-none">
                             {Object.entries(item.selectedOptions).map(([optKey, optVal]) => (
@@ -942,6 +985,11 @@ function App() {
   const [showFavoritePage, setShowFavoritePage] = React.useState(false);
   const [showOrderHistory, setShowOrderHistory] = React.useState(false);
 
+  // --- เพิ่ม state สำหรับแบ่งหน้า ---
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const ITEMS_PER_PAGE = 8;
+  React.useEffect(() => { setCurrentPage(1); }, [selectedCategory, searchQuery, filter]);
+
   // Review Modal
   const [reviewFoodId, setReviewFoodId] = React.useState(null);
   const [reviews, setReviews] = React.useState(initialReviews);
@@ -957,6 +1005,13 @@ function App() {
   if (filter.sort === "price-asc") filteredFoods = [...filteredFoods].sort((a, b) => a.price - b.price);
   if (filter.sort === "price-desc") filteredFoods = [...filteredFoods].sort((a, b) => b.price - a.price);
   if (filter.sort === "rating-desc") filteredFoods = [...filteredFoods].sort((a, b) => b.rating - a.rating);
+
+  // --- แบ่งหน้าเมนู ---
+  const totalPages = Math.ceil(filteredFoods.length / ITEMS_PER_PAGE);
+  const pagedFoods = filteredFoods.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   // Add to cart (with options)
   const handleAddToCartClick = (item) => {
@@ -1039,7 +1094,7 @@ function App() {
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
   const totalAmount = subtotal + DELIVERY_FEE;
 
-  // Handle order checkout (save to localStorage for admin site)
+  // Handle order checkout
   const handleOrderCheckout = () => {
     if (!user.name || !user.phone || !user.address) {
       alert("กรุณากรอกชื่อ เบอร์โทร และที่อยู่ในโปรไฟล์ให้ครบถ้วน");
@@ -1048,19 +1103,19 @@ function App() {
     }
     const orderId = "E" + Math.floor(Math.random() * 1000000);
     const cartWithRestaurantName = cart.map(item => ({
-  ...item,
-  restaurantName: restaurants.find(r => r.id === item.restaurantId)?.name || ""
-}));
+      ...item,
+      restaurantName: restaurants.find(r => r.id === item.restaurantId)?.name || ""
+    }));
 
-const newOrder = {
-  orderId,
-  userName: user.name,
-  userInfo: { name: user.name, phone: user.phone, address: user.address },
-  cart: cartWithRestaurantName, // <--- แก้ตรงนี้
-  amount: totalAmount,
-  status: "waiting",
-  date: new Date(),
-};
+    const newOrder = {
+      orderId,
+      userName: user.name,
+      userInfo: { name: user.name, phone: user.phone, address: user.address },
+      cart: cartWithRestaurantName,
+      amount: totalAmount,
+      status: "waiting",
+      date: new Date(),
+    };
     sendOrderToMake(newOrder);
     setUser(u => {
       const newUser = {
@@ -1074,43 +1129,86 @@ const newOrder = {
     setCart([]);
   };
 
-  // ===== UI =====
+  // ฟังก์ชันสำหรับไปหน้าตะกร้าจากทุกหน้า
+  function goToCart() {
+    setShowFavoritePage(false);
+    setShowOrderHistory(false);
+    setPage("cart");
+  }
+
+  // ปุ่ม back เงื่อนไขแต่ละหน้า
+  function handleBack() {
+    if (page === "cart") setPage("home");
+    else if (page === "profile") setPage("home");
+    else if (page === "payment") setPage("cart");
+    else if (showFavoritePage) setShowFavoritePage(false);
+    else if (showOrderHistory) setShowOrderHistory(false);
+  }
+
+  // กำหนดว่าหน้าไหนควรมีปุ่ม back
+  const showBack = (
+    page === "cart" ||
+    page === "profile" ||
+    page === "payment" ||
+    showFavoritePage ||
+    showOrderHistory
+  );
+
+  // กำหนด TabBar tab ไหน active
+  let tabActive = "home";
+  if (showFavoritePage) tabActive = "fav";
+  else if (showOrderHistory) tabActive = "order";
+  else if (page === "profile" || page === "cart" || page === "payment") tabActive = "";
+
+  // --- render หน้าเดียวเท่านั้น ---
+  let mainPage = null;
   if (showFavoritePage) {
-    return <FavoritePage favoriteFoods={favoriteFoods} onShowFood={f=>setReviewFoodId(f.id)} onBack={()=>setShowFavoritePage(false)}/>;
-  }
-  if (showOrderHistory) {
-    return <OrderHistoryPage orderHistory={user.orderHistory || []} onBack={()=>setShowOrderHistory(false)}/>;
-  }
-  if (page === "profile") {
-    return <ProfilePage user={user} setUser={setUser}
-      onBack={()=>setPage("home")}
-      onShowOrderHistory={()=>{setShowOrderHistory(true);}}/>;
-  }
-  // ---- หน้าแรก ----
-  return (
-    <div className="max-w-md mx-auto relative bg-gray-50 min-h-screen">
-      <Header
+    mainPage = (
+      <FavoritePage
+        favoriteFoods={favoriteFoods}
+        onShowFood={f => setReviewFoodId(f.id)}
+        onAddToCart={addToCart}
+        favorites={favorites}
+        onToggleFavorite={handleToggleFavorite}
+        reviews={reviews}
         cartCount={cart.reduce((sum, item) => sum + item.qty, 0)}
-        onCartClick={() => setPage("cart")}
-        onProfileClick={() => setPage("profile")}
-        showBack={false}
       />
-      <TabBar
-        tabs={[
-          { id: "home", name: "เมนูทั้งหมด", icon: <i className="fas fa-store"></i> },
-          { id: "fav", name: "รายการโปรด", icon: <i className="fas fa-heart"></i> },
-          { id: "order", name: "ประวัติ", icon: <i className="fas fa-receipt"></i> }
-        ]}
-        active={page}
-        setActive={tab => {
-          if (tab === "fav") setShowFavoritePage(true);
-          else if (tab === "order") setShowOrderHistory(true);
-          else setPage(tab);
-        }}
+    );
+  } else if (showOrderHistory) {
+    mainPage = (
+      <OrderHistoryPage orderHistory={user.orderHistory || []} />
+    );
+  } else if (page === "profile") {
+    mainPage = (
+      <ProfilePage
+        user={user}
+        setUser={setUser}
+        onShowOrderHistory={() => { setShowOrderHistory(true); setShowFavoritePage(false); setPage("home"); }}
       />
-      {page === "home" && (
-        <>
-        <BannerPromo/>
+    );
+  } else if (page === "cart") {
+    mainPage = (
+      <CartPage
+        cart={cart}
+        onUpdateQty={updateQty}
+        onRemoveItem={removeItem}
+        onCheckout={handleOrderCheckout}
+        onPay={() => setPage("payment")}
+        totalAmount={subtotal}
+      />
+    );
+  } else if (page === "payment") {
+    mainPage = (
+      <PaymentPage
+        amount={subtotal}
+        onCancel={() => setPage("cart")}
+        onConfirm={handleOrderCheckout}
+      />
+    );
+  } else {
+    mainPage = (
+      <>
+        <BannerPromo />
         <SearchBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -1123,34 +1221,57 @@ const newOrder = {
           onSelectCategory={setSelectedCategory}
         />
         <FoodList
-          foods={filteredFoods}
+          foods={pagedFoods}
           onAddToCart={handleAddToCartClick}
           searchQuery={searchQuery}
           favorites={favorites}
           onToggleFavorite={handleToggleFavorite}
-          onShowReviews={id=>setReviewFoodId(id)}
+          onShowReviews={id => setReviewFoodId(id)}
           reviews={reviews}
         />
-        </>
-      )}
-      {page === "cart" && (
-        <CartPage
-          cart={cart}
-          onUpdateQty={updateQty}
-          onRemoveItem={removeItem}
-          onBack={() => setPage("home")}
-          onCheckout={handleOrderCheckout}
-          onPay={() => setPage("payment")}
-          totalamount={subtotal}
-        />
-      )}
-      {page === "payment" && (
-  <PaymentPage
-    amount={subtotal}
-    onCancel={() => setPage("cart")}
-    onConfirm={handleOrderCheckout}
-  />
-)}
+        {/* --- ปุ่มแบ่งหน้า --- */}
+        <div className="flex justify-center mt-6 mb-10">
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i + 1}
+              className={`mx-1 px-4 py-2 rounded-full font-bold border ${
+                currentPage === i + 1
+                  ? "bg-orange-500 text-white border-orange-500"
+                  : "bg-white text-orange-500 border-orange-300"
+              }`}
+              onClick={() => setCurrentPage(i + 1)}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div className="max-w-md mx-auto relative bg-gray-50 min-h-screen">
+      <Header
+        cartCount={cart.reduce((sum, item) => sum + item.qty, 0)}
+        onCartClick={goToCart}
+        onProfileClick={() => setPage("profile")}
+        showBack={showBack}
+        onBack={handleBack}
+      />
+      <TabBar
+        tabs={[
+          { id: "home", name: "เมนูทั้งหมด", icon: <i className="fas fa-store"></i> },
+          { id: "fav", name: "รายการโปรด", icon: <i className="fas fa-heart"></i> },
+          { id: "order", name: "ประวัติ", icon: <i className="fas fa-receipt"></i> }
+        ]}
+        active={tabActive}
+        setActive={tab => {
+          if (tab === "fav") { setShowFavoritePage(true); setShowOrderHistory(false); setPage("home"); }
+          else if (tab === "order") { setShowOrderHistory(true); setShowFavoritePage(false); setPage("home"); }
+          else { setPage(tab); setShowFavoritePage(false); setShowOrderHistory(false); }
+        }}
+      />
+      {mainPage}
       {showPaymentSuccess && (
         <PaymentSuccessModal onClose={() => {
           setShowPaymentSuccess(false);
@@ -1169,7 +1290,7 @@ const newOrder = {
         <FoodReviewModal
           food={foodReviewModalFood}
           reviews={foodReviews}
-          onClose={()=>setReviewFoodId(null)}
+          onClose={() => setReviewFoodId(null)}
           onAddReview={handleAddReview}
           user={user}
         />
