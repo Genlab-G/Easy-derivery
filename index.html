@@ -39,6 +39,12 @@
     .order-status.completed { color: #22c55e;}
     .order-status.canceled { color: #dc2626;}
     .glow { text-shadow: 0 0 8px #FFC107, 0 0 2px #fff; }
+    @keyframes bounce-in {
+  0% { opacity: 0; transform: scale(0.8) translateY(40px);}
+  70% { opacity: 1; transform: scale(1.07) translateY(-8px);}
+  100% { opacity: 1; transform: scale(1) translateY(0);}
+}
+.animate-bounce-in { animation: bounce-in 0.7s; }
   </style>
 </head>
 <body>
@@ -138,19 +144,19 @@ function RecommendedCarousel({ foods, onAddToCart, onToggleFavorite, favorites }
       if (window.Swiper) {
         new window.Swiper('.swiper-recommended', {
           slidesPerView: 1.1,
-          spaceBetween: 18,
+          spaceBetween: 15,
           freeMode: true,
           pagination: { el: '.swiper-pagination', clickable: true },
           loop: false,
-          breakpoints: { 640: { slidesPerView: 2.3 } }
+          breakpoints: { 640: { slidesPerView: 2.2 }, 900: { slidesPerView: 3 } }
         });
       }
     }, 10);
   }, [foods]);
   return (
     <div className="mt-8 px-5">
-      <h2 className="text-2xl font-extrabold text-gray-900 mb-4 tracking-tight flex items-center gap-2">
-        <span className="text-yellow-400 text-3xl"><i className="fas fa-star"></i></span>
+      <h2 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+        <span className="text-yellow-400 text-2xl"><i className="fas fa-star"></i></span>
         เมนูแนะนำประจำวัน
       </h2>
       <div className="swiper swiper-recommended w-full pb-6">
@@ -159,32 +165,31 @@ function RecommendedCarousel({ foods, onAddToCart, onToggleFavorite, favorites }
             const fav = favorites.includes(food.id);
             return (
               <div key={food.id} className="swiper-slide">
-                <div className="relative rounded-3xl shadow-xl bg-white overflow-hidden border border-yellow-100 hover:scale-105 transition duration-300" style={{ minWidth: 220 }}>
+                <div className="relative rounded-2xl shadow bg-white overflow-hidden border border-emerald-100 hover:scale-105 transition duration-300" style={{ minWidth: 170 }}>
                   <img src={food.image} alt={food.name}
-                    className="w-full h-40 object-cover rounded-t-3xl"
-                    style={{ filter: 'brightness(0.97)' }}
+                    className="w-full h-32 object-cover rounded-t-2xl"
                   />
                   {/* Badge */}
-                  <div className="absolute top-3 left-3 bg-yellow-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                  <div className="absolute top-2 left-2 bg-yellow-400 text-white text-[10px] px-2 py-0.5 rounded-full shadow">
                     แนะนำ
                   </div>
                   {/* Favorite Heart */}
                   <button
                     onClick={() => onToggleFavorite(food.id)}
-                    className={`absolute top-3 right-3 fav-heart ${fav ? "active" : ""} bg-white/90 rounded-full p-2 shadow-lg hover:scale-110 transition`}
+                    className={`absolute top-2 right-2 fav-heart ${fav ? "active" : ""} bg-white/80 rounded-full p-1 shadow hover:scale-110`}
                     title={fav ? "นำออกจากโปรด" : "เพิ่มในโปรด"}
                   >
-                    <i className="fas fa-heart text-xl"></i>
+                    <i className="fas fa-heart text-base"></i>
                   </button>
                   {/* Card Content */}
-                  <div className="p-4">
+                  <div className="p-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-gray-900 text-lg truncate">{food.name}</h3>
-                      <span className="bg-yellow-400 text-white rounded-full px-3 py-1 font-bold text-sm shadow">{formatCurrency(food.price)}</span>
+                      <h3 className="font-bold text-gray-900 text-sm truncate">{food.name}</h3>
+                      <span className="bg-yellow-400 text-white rounded-full px-2 py-0.5 font-bold text-xs shadow">{formatCurrency(food.price)}</span>
                     </div>
                     <button
                       onClick={() => onAddToCart(food)}
-                      className="w-10 h-10 accent-btn rounded-full flex items-center justify-center shadow-lg mt-4 mx-auto hover:bg-orange-600 transition text-lg"
+                      className="w-8 h-8 accent-btn rounded-full flex items-center justify-center shadow-lg mt-3 mx-auto hover:bg-orange-600 transition text-base"
                       title="เพิ่มลงตะกร้า"
                     >
                       <i className="fas fa-plus"></i>
@@ -195,7 +200,6 @@ function RecommendedCarousel({ foods, onAddToCart, onToggleFavorite, favorites }
             );
           })}
         </div>
-        {/* Pagination Dots */}
         <div className="swiper-pagination mt-2"></div>
       </div>
     </div>
@@ -1117,12 +1121,16 @@ function App() {
   const [showFavoritePage, setShowFavoritePage] = React.useState(false);
   const [showOrderHistory, setShowOrderHistory] = React.useState(false);
 
+  // --- toast สำหรับแจ้งเตือนเพิ่มเมนูในตะกร้า ---
+  const [showToast, setShowToast] = React.useState(false);
+  const [toastText, setToastText] = React.useState("");
+
   // --- เพิ่ม state สำหรับแบ่งหน้า ---
   const [currentPage, setCurrentPage] = React.useState(1);
   const ITEMS_PER_PAGE = 8;
   React.useEffect(() => { setCurrentPage(1); }, [selectedCategory, searchQuery, filter]);
 
-  // --- เพิ่ม useEffect สำหรับ sync cart & restaurants ไป window ---
+  // --- sync cart & restaurants ไป window ---
   React.useEffect(() => {
     window.__ED_CART = cart;
     window.__ED_RESTAURANTS = restaurants;
@@ -1157,6 +1165,10 @@ function App() {
       setSelectedItem(item); setShowOptionsModal(true);
     } else {
       addToCart(item, {}, 1);
+      // Toast แจ้งเตือน
+      setToastText(`เพิ่ม "${item.name}" ในตะกร้าแล้ว`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 1400);
     }
   };
   const addToCart = (item, selectedOptions = {}, quantity) => {
@@ -1181,6 +1193,10 @@ function App() {
         }];
       }
     });
+    // Toast แจ้งเตือน (กรณีมี options)
+    setToastText(`เพิ่ม "${item.name}" ในตะกร้าแล้ว`);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 1400);
   };
   // อัปเดตจำนวน
   const updateQty = (cartItem, newQty) => {
@@ -1422,6 +1438,15 @@ function App() {
         }}
       />
       {mainPage}
+      {/* --- Toast แจ้งเตือนเพิ่มเมนูในตะกร้า --- */}
+      {showToast && (
+  <div className="fixed left-1/2 bottom-20 -translate-x-1/2 z-50">
+    <div className="flex items-center gap-3 bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-2xl font-bold text-base animate-bounce-in ring-2 ring-emerald-300/30">
+      <i className="fas fa-check-circle text-2xl"></i>
+      <span>{toastText}</span>
+    </div>
+  </div>
+)}
       {showPaymentSuccess && (
         <PaymentSuccessModal onClose={() => {
           setShowPaymentSuccess(false);
