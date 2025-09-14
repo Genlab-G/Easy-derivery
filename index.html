@@ -713,6 +713,46 @@ function PaymentPage({ amount, onCancel, onConfirm }) {
     return `${m}:${s}`;
   };
 
+  // --- ดึงข้อมูล cart และ restaurants ---
+  const cart = window.__ED_CART || [];
+  const restaurants = window.__ED_RESTAURANTS || [];
+  const formatCurrency = (amount) => new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(amount);
+
+  const copyOrderToClipboard = () => {
+    if (!cart.length) {
+      alert("ยังไม่มีรายการในตะกร้า");
+      return;
+    }
+    let details = cart.map(item => {
+      const restaurantName = item.restaurantName || (restaurants.find(r => r.id === item.restaurantId)?.name) || "";
+      const options = item.selectedOptions
+        ? Object.entries(item.selectedOptions)
+            .filter(([k]) => k !== "note")
+            .map(([k, v]) => v?.name)
+            .join(", ")
+        : "";
+      const note = item.selectedOptions?.note ? `- หมายเหตุ: ${item.selectedOptions.note}\n` : "";
+      return (
+        `${item.name}\n` +
+        `- ร้าน: ${restaurantName}\n` +
+        (options ? `- ออปชั่น: ${options}\n` : "") +
+        `- จำนวน: ${item.qty}\n` +
+        note +
+        `- ราคารวม: ${formatCurrency(item.price * item.qty)}\n`
+      );
+    }).join('\n');
+    details += '-------------------------\n';
+    details += `รวมทั้งหมด: ${formatCurrency(amount)}`;
+    navigator.clipboard.writeText(details)
+      .then(() => alert("คัดลอกรายละเอียดการสั่งซื้อแล้ว!"))
+      .catch(() => alert("เกิดข้อผิดพลาดในการคัดลอก"));
+  };
+
+  React.useEffect(() => {
+    window.__ED_CART = window.__ED_CART || [];
+    window.__ED_RESTAURANTS = window.__ED_RESTAURANTS || [];
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 pb-24 flex flex-col items-center justify-start">
       <div className="px-5 pt-6 w-full max-w-md">
@@ -734,51 +774,46 @@ function PaymentPage({ amount, onCancel, onConfirm }) {
             เมื่อโอนเสร็จเรียบร้อยแล้ว<br />
             รบกวนแจ้งหลักฐานการโอนผ่านแชทไลน์
           </div>
+          {/* ปุ่มคัดลอกเมนู + คำอธิบายสำหรับเงินสด */}
+          <div className="flex items-center gap-2 mb-1 justify-center">
+            <button
+              className="flex items-center bg-orange-100 text-orange-700 px-3 py-1 rounded-md text-sm font-semibold shadow-sm hover:bg-orange-200"
+              onClick={copyOrderToClipboard}
+              style={{ minWidth: "fit-content" }}
+            >
+              <i className="fas fa-copy mr-1"></i>
+              คัดลอกเมนู
+            </button>
+            <span className="text-xs text-gray-400 ml-2">สำหรับชำระเงินสด</span>
+          </div>
+          <div className="mt-1 text-xs text-gray-600 flex items-center gap-1 text-center">
+            <span role="img" aria-label="chat">💬</span>
+            หากต้องการชำระเงินสด ให้นำเมนูที่คัดลอกไปวางในช่องแชท LINE ร้านค้า
+          </div>
         </div>
-       <div className="flex space-x-3">
-  <button
-    className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold"
-    onClick={onCancel}
-  >
-    ยกเลิก
-  </button>
-  <button
-    className="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold"
-    onClick={onConfirm}
-  >
-    ยืนยันการโอน
-  </button>
-  <button
-    className="flex-1 bg-yellow-500 text-white py-3 rounded-xl font-bold"
-    onClick={() => window.open('https://line.me/R/ti/p/@029lbtmu')}
-  >
-    ชำระเป็นเงินสด ติดต่อสั่งทาง LINE
-  </button>
-</div>
-<div className="text-red-500 text-sm mt-2 text-center">
-  สำหรับผู้ที่ต้องการชำระเงินสด กรุณาสั่งซื้อผ่านช่องทาง LINE เท่านั้น
-</div>
-      </div>
-    </div>
-  );
-}
-
-// --- PaymentSuccessModal ---
-function PaymentSuccessModal({ onClose }) {
-  return (
-    <div className="modal-overlay">
-      <div className="bg-white rounded-2xl p-8 modal-content flex flex-col items-center">
-        <i className="fas fa-check-circle text-green-500 text-5xl mb-4"></i>
-        <h3 className="font-bold text-xl text-green-600 mb-2">ชำระเงินเรียบร้อยแล้ว</h3>
-        <p className="text-gray-700 mb-4 text-center">ขอบคุณสำหรับการสั่งซื้อ<br/>โปรดรอรับอาหารตามเวลาที่กำหนด</p>
-        <button
-          className="bg-red-500 text-white py-2 px-5 rounded-xl font-bold"
-          onClick={onClose}
-        >
-          กลับสู่หน้าหลัก
-        </button>
-        <div className="text-red-500 text-xs mt-3 text-center">
-          หากพบว่าเป็นการสั่งเพื่อก่อกวนหรือกลั่นแกล้ง ทางร้านจะดำเนินการตามกฎหมายอย่างถึงที่สุด
+        {/* ปุ่มอื่น ๆ */}
+        <div className="flex space-x-3">
+          <button
+            className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold"
+            onClick={onCancel}
+          >
+            ยกเลิก
+          </button>
+          <button
+            className="flex-1 bg-green-500 text-white py-3 rounded-xl font-bold"
+            onClick={onConfirm}
+          >
+            ยืนยันการโอน
+          </button>
+          <button
+            className="flex-1 bg-yellow-500 text-white py-3 rounded-xl font-bold"
+            onClick={() => window.open('https://line.me/R/ti/p/@029lbtmu')}
+          >
+            ชำระเป็นเงินสด ติดต่อสั่งทาง LINE
+          </button>
+        </div>
+        <div className="text-red-500 text-sm mt-2 text-center">
+          สำหรับผู้ที่ต้องการชำระเงินสด กรุณาสั่งซื้อผ่านช่องทาง LINE เท่านั้น
         </div>
       </div>
     </div>
@@ -1014,6 +1049,12 @@ function App() {
   const [currentPage, setCurrentPage] = React.useState(1);
   const ITEMS_PER_PAGE = 8;
   React.useEffect(() => { setCurrentPage(1); }, [selectedCategory, searchQuery, filter]);
+
+  // --- เพิ่ม useEffect สำหรับ sync cart & restaurants ไป window ---
+  React.useEffect(() => {
+    window.__ED_CART = cart;
+    window.__ED_RESTAURANTS = restaurants;
+  }, [cart]);
 
   // Review Modal
   const [reviewFoodId, setReviewFoodId] = React.useState(null);
