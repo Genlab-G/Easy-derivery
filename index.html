@@ -143,13 +143,16 @@ function RecommendedCarousel({ foods, onAddToCart, onToggleFavorite, favorites }
     setTimeout(() => {
       if (window.Swiper) {
         new window.Swiper('.swiper-recommended', {
-          slidesPerView: 1.2,
-          spaceBetween: 18,
-          freeMode: true,
-          pagination: { el: '.swiper-pagination', clickable: true },
-          loop: false,
-          breakpoints: { 640: { slidesPerView: 2.2 }, 900: { slidesPerView: 3 } }
-        });
+  slidesPerView: 1.18,
+  spaceBetween: 8, // <--- ลดช่องว่างลง
+  freeMode: true,
+  pagination: { el: '.swiper-pagination', clickable: true },
+  loop: false,
+  breakpoints: {
+    640: { slidesPerView: 2.2, spaceBetween: 14 },
+    900: { slidesPerView: 3, spaceBetween: 16 }
+  }
+});
       }
     }, 10);
   }, [foods]);
